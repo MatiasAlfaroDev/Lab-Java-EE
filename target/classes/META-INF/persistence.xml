@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence xmlns="https://jakarta.ee/xml/ns/persistence"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence
+                 https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd"
+             version="3.0">
+
+    <persistence-unit name="mensajeriaPU" transaction-type="JTA">
+        <jta-data-source>java:/jdbc/MensajeriaDS</jta-data-source>
+
+        <!-- Entidades por módulo -->
+        <!-- Auth -->
+        <class>com.mensajeria.auth.model.User</class>
+        <class>com.mensajeria.auth.model.RefreshToken</class>
+        <!-- Mensajería -->
+        <class>com.mensajeria.messaging.model.Channel</class>
+        <class>com.mensajeria.messaging.model.ChannelMember</class>
+        <class>com.mensajeria.messaging.model.Message</class>
+        <!-- Archivos -->
+        <class>com.mensajeria.attachment.model.Attachment</class>
+        <!-- Interacción -->
+        <class>com.mensajeria.interaction.model.MessageReaction</class>
+        <class>com.mensajeria.interaction.model.Poll</class>
+        <class>com.mensajeria.interaction.model.PollOption</class>
+        <class>com.mensajeria.interaction.model.PollVote</class>
+        <!-- Notificaciones -->
+        <class>com.mensajeria.notification.model.Notification</class>
+        <!-- Auditoría -->
+        <class>com.mensajeria.audit.model.AuditLog</class>
+        <!-- Webhooks -->
+        <class>com.mensajeria.webhook.model.Webhook</class>
+        <!-- Reuniones -->
+        <class>com.mensajeria.meeting.model.MeetingRoom</class>
+
+        <exclude-unlisted-classes>true</exclude-unlisted-classes>
+
+        <properties>
+            <property name="hibernate.dialect" value="org.hibernate.dialect.PostgreSQLDialect"/>
+            <property name="hibernate.hbm2ddl.auto" value="validate"/>
+            <property name="hibernate.show_sql" value="false"/>
+            <property name="hibernate.format_sql" value="true"/>
+        </properties>
+    </persistence-unit>
+</persistence>

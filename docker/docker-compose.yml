@@ -1,0 +1,72 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: mensajeria-postgres
+    environment:
+      POSTGRES_DB: mensajeria
+      POSTGRES_USER: mensajeria_user
+      POSTGRES_PASSWORD: mensajeria_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - mensajeria-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: mensajeria-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - mensajeria-net
+
+  activemq:
+    image: apache/activemq-artemis:latest
+    container_name: mensajeria-activemq
+    environment:
+      ARTEMIS_USER: artemis
+      ARTEMIS_PASSWORD: artemis_pass
+    ports:
+      - "8161:8161"   # Console web
+      - "61616:61616" # STOMP / OpenWire
+    networks:
+      - mensajeria-net
+
+  minio:
+    image: minio/minio:latest
+    container_name: mensajeria-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minio_user
+      MINIO_ROOT_PASSWORD: minio_pass
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - mensajeria-net
+
+  wildfly:
+    build: ./wildfly
+    container_name: mensajeria-wildfly
+    ports:
+      - "8080:8080"
+      - "9990:9990"   # Management console
+    depends_on:
+      - postgres
+      - redis
+      - activemq
+    networks:
+      - mensajeria-net
+
+volumes:
+  postgres_data:
+  minio_data:
+
+networks:
+  mensajeria-net:
+    driver: bridge
