@@ -1,4 +1,4 @@
-package com.mensajeria.config;
+package com.chat.config;
 
 import jakarta.ws.rs.ApplicationPath;
 import jakarta.ws.rs.core.Application;
