@@ -1,6 +1,6 @@
 package com.chat.model;
 
-import com.chat.datatype.DtFecha;
+import java.time.LocalDateTime;
 import com.chat.enums.TipoChat;
 import jakarta.persistence.*;
 
@@ -19,19 +19,21 @@ public class Chat {
     @Column(nullable = false, length = 20)
     private TipoChat tipo;
 
-    @Embedded
-    @AttributeOverrides({
-        @AttributeOverride(name = "dia",  column = @Column(name = "fecha_creacion_dia")),
-        @AttributeOverride(name = "mes",  column = @Column(name = "fecha_creacion_mes")),
-        @AttributeOverride(name = "anio", column = @Column(name = "fecha_creacion_anio"))
-    })
-    private DtFecha fechaCreacion;
+    @Column(name = "fecha_creacion", nullable = false, updatable = false)
+    private LocalDateTime fechaCreacion;
+
+    @PrePersist
+    protected void onCreate() {
+        this.fechaCreacion = LocalDateTime.now();
+    }
 
     public int getChatId() { return chatId; }
+    
     public String getNombre() { return nombre; }
     public void setNombre(String nombre) { this.nombre = nombre; }
+    
     public TipoChat getTipo() { return tipo; }
     public void setTipo(TipoChat tipo) { this.tipo = tipo; }
-    public DtFecha getFechaCreacion() { return fechaCreacion; }
-    public void setFechaCreacion(DtFecha fechaCreacion) { this.fechaCreacion = fechaCreacion; }
+    
+    public LocalDateTime getFechaCreacion() { return fechaCreacion; }
 }
