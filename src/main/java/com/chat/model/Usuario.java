@@ -1,6 +1,7 @@
 package com.chat.model;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import com.chat.enums.TipoEstado;
 import jakarta.persistence.*;
 

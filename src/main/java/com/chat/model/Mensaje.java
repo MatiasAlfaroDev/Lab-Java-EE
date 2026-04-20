@@ -3,6 +3,7 @@ package com.chat.model;
 import com.chat.datatype.DtFecha;
 import com.chat.enums.EstadoMensaje;
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "mensaje")
@@ -47,7 +48,7 @@ public class Mensaje {
     public String getContenido() { return contenido; }
     public void setContenido(String contenido) { this.contenido = contenido; }
     
-    public DtFecha getFechaEnviado() { return fechaEnviado; }
+    public LocalDateTime getFechaEnviado() { return fechaEnviado; }
    
     public boolean isEditado() { return editado; }
     public void setEditado(boolean editado) { this.editado = editado; }
