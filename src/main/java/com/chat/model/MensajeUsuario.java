@@ -13,7 +13,7 @@ public class MensajeUsuario {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "usuario_receptor_id", nullable = false)
-    private Usuario emisor; // Se mantiene 'emisor' según tu UML (aunque sea el receptor del estado)
+    private Usuario receptor; // Se mantiene 'emisor' según tu UML (aunque sea el receptor del estado)
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "mensaje_id", nullable = false)
@@ -31,8 +31,8 @@ public class MensajeUsuario {
 
     public int getId() {return id;}
 
-    public Usuario getEmisor() {return emisor;}
-    public void setEmisor(Usuario emisor) {this.emisor = emisor;}
+    public Usuario getReceptor() {return receptor;}
+    public void setReceptor(Usuario receptor) {this.receptor = receptor;}
 
     public Mensaje getMensaje() {return mensaje;}
     public void setMensaje(Mensaje mensaje) {this.mensaje = mensaje;}
