@@ -3,6 +3,7 @@ package com.chat.controller;
 import com.chat.service.ChatService;
 import com.chat.datatype.CrearChatRequest;
 import com.chat.model.Chat;
+import com.chat.security.TokenService;
 
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
@@ -18,9 +19,24 @@ public class ChatController {
     @Inject
     private ChatService chatService;
 
+    @Inject
+    private TokenService tokenService;
+
     @POST
-    public Response crearChat(CrearChatRequest request) {
+    public Response crearChat(
+        CrearChatRequest request,
+        @HeaderParam("Authorization") String token
+    ) {
         try {
+            // VALIDAR TOKEN
+            if (token == null || token.isBlank()) {
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity("Falta token")
+                        .build();
+            }
+
+            Long userId = tokenService.validarToken(token);
+
             // Validación básica
             if (request.getNombre() == null || request.getNombre().isBlank() ||
                 request.getTipo() == null || request.getTipo().isBlank() ||
@@ -34,16 +50,17 @@ public class ChatController {
             chatService.crearChat(
                 request.getNombre(),
                 request.getTipo(),
-                request.getUsuarios()
+                request.getUsuarios(),
+                userId
             );
 
             return Response.ok("Chat creado correctamente").build();
 
         } catch (Exception e) {
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(e.getMessage())
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .entity("Token inválido")
                     .build();
-        }
+            }
     }
 
     @GET

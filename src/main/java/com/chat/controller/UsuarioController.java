@@ -2,8 +2,10 @@ package com.chat.controller;
 
 import com.chat.service.UsuarioService;
 import com.chat.model.Usuario;
+import com.chat.security.TokenService;
 import com.chat.datatype.LoginRequest;
 import com.chat.datatype.UsuarioDTO;
+import com.chat.datatype.LoginResponse;
 
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
@@ -17,6 +19,9 @@ public class UsuarioController {
 
     @Inject
     private UsuarioService usuarioService;
+
+    @Inject
+    private TokenService tokenService;
 
     // REGISTRO
     @POST
@@ -57,7 +62,9 @@ public class UsuarioController {
                 usuario.getEstado().name()
             );
 
-            return Response.ok(dto).build();
+            String token = tokenService.generarToken(usuario);
+
+            return Response.ok(new LoginResponse(token, dto)).build();
 
         } catch (Exception e) {
             return Response.status(Response.Status.UNAUTHORIZED)

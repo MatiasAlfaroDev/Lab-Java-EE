@@ -27,14 +27,27 @@ public class ChatService {
     private EntityManager em;
 
     @Transactional
-    public void crearChat(String nombre, String tipo, List<Integer> usuariosIds) {
+    public void crearChat(String nombre, String tipo, List<Integer> usuariosIds, Long userId) {
 
         // 1. Validaciones básicas
         if (nombre == null || tipo == null || usuariosIds == null || usuariosIds.isEmpty()) {
             throw new IllegalArgumentException("Datos inválidos");
         }
 
-        // 2. Crear chat
+        // 2. Validar tipo de chat
+        TipoChat tipoChat;
+        try {
+            tipoChat = TipoChat.valueOf(tipo);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Tipo de chat inválido");
+        }
+
+        // 3. Validar que el creador esté en la lista
+        if (!usuariosIds.contains(userId.intValue())) {
+            throw new RuntimeException("El creador debe estar en la lista de usuarios");
+        }
+
+        // 4. Crear chat
         Chat chat = new Chat();
         chat.setNombre(nombre);
         chat.setTipo(TipoChat.valueOf(tipo));
@@ -44,30 +57,28 @@ public class ChatService {
         // IMPORTANTE: para tener el chatId
         em.flush();
 
-        // 3. Crear miembros
-        for (int i = 0; i < usuariosIds.size(); i++) {
+        // 5. Crear miembros
+        for (Integer userIdLista : usuariosIds) {
 
-            Integer userId = usuariosIds.get(i);
-
-            Usuario usuario = usuarioDAO.buscarPorId(userId);
+            Usuario usuario = usuarioDAO.buscarPorId(userIdLista);
 
             if (usuario == null) {
-                throw new RuntimeException("Usuario no existe: " + userId);
+                throw new RuntimeException("Usuario no existe: " + userIdLista);
             }
 
             MiembroChat miembro = new MiembroChat();
             miembro.setChat(chat);
             miembro.setUsuario(usuario);
 
-            // ROL
-            if (i == 0) {
+            // Definir rol correctamente
+            if (userIdLista.equals(userId.intValue())) {
                 miembro.setChatRol(ChatRol.CREADOR);
             } else {
                 miembro.setChatRol(ChatRol.MIEMBRO);
             }
 
             // ID compuesto
-            MiembroChatId id = new MiembroChatId(userId, chat.getChatId());
+            MiembroChatId id = new MiembroChatId(userIdLista, chat.getChatId());
             miembro.setId(id);
 
             em.persist(miembro);
