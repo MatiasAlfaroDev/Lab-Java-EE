@@ -38,4 +38,27 @@ public class UsuarioService {
         // 6. Guardar en BD
         usuarioDAO.guardar(usuario);
     }
+
+    public Usuario login(String email, String password) {
+
+        // 1. Buscar usuario
+        Usuario usuario = usuarioDAO.buscarEmail(email);
+
+        if (usuario == null) {
+            throw new IllegalArgumentException("Usuario no existe");
+        }
+
+        // 2. Verificar contraseña (BCrypt)
+        if (!BCrypt.checkpw(password, usuario.getPassword())) {
+            throw new IllegalArgumentException("Credenciales inválidas");
+        }
+
+        // 3. Cambiar estado
+        usuario.setEstado(TipoEstado.ONLINE);
+
+        // 4. Guardar cambio
+        usuarioDAO.actualizar(usuario);
+
+        return usuario;
+}
 }

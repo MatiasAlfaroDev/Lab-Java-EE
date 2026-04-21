@@ -38,4 +38,10 @@ public class UsuarioDAO {
     public boolean existeEmail(String email) {
         return buscarEmail(email) != null;
     }
+
+    // Actualizar usuario
+    @Transactional
+    public Usuario actualizar(Usuario usuario) {
+        return em.merge(usuario);
+    }
 }
