@@ -4,10 +4,14 @@ import com.chat.dao.UsuarioDAO;
 import com.chat.model.Usuario;
 import com.chat.enums.TipoEstado;
 import org.mindrot.jbcrypt.BCrypt;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 
+@ApplicationScoped
 public class UsuarioService {
 
-    private UsuarioDAO usuarioDAO = new UsuarioDAO();
+    @Inject
+    private UsuarioDAO usuarioDAO;
 
     public void registrarUsuario(String nombre, String email, String password, String rol) {
 

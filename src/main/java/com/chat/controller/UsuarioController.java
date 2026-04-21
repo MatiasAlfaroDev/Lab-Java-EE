@@ -3,6 +3,7 @@ package com.chat.controller;
 import com.chat.service.UsuarioService;
 import com.chat.model.Usuario;
 import com.chat.datatype.LoginRequest;
+import com.chat.datatype.UsuarioDTO;
 
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
@@ -48,7 +49,15 @@ public class UsuarioController {
                 request.getPassword()
             );
 
-            return Response.ok(usuario).build();
+            UsuarioDTO dto = new UsuarioDTO(
+                usuario.getId(),
+                usuario.getNombre(),
+                usuario.getEmail(),
+                usuario.getRol(),
+                usuario.getEstado().name()
+            );
+
+            return Response.ok(dto).build();
 
         } catch (Exception e) {
             return Response.status(Response.Status.UNAUTHORIZED)

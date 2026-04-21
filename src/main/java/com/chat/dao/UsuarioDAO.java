@@ -44,4 +44,8 @@ public class UsuarioDAO {
     public Usuario actualizar(Usuario usuario) {
         return em.merge(usuario);
     }
+
+    public Usuario buscarPorId(int id) {
+    return em.find(Usuario.class, id);
+}
 }

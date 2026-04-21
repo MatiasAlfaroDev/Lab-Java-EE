@@ -51,7 +51,9 @@ services:
       - mensajeria-net
 
   wildfly:
-    build: ./wildfly
+    build:
+      context: ..
+      dockerfile: docker/wildfly/Dockerfile
     container_name: mensajeria-wildfly
     ports:
       - "8080:8080"
