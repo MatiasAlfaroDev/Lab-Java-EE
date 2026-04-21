@@ -1,8 +1,8 @@
 package com.chat.model;
 
-import com.chat.datatype.DtFecha;
 import com.chat.enums.ChatRol;
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "miembro_chat")
@@ -25,22 +25,27 @@ public class MiembroChat {
     @Column(name = "chat_rol", nullable = false, length = 20)
     private ChatRol chatRol;
 
-    @Embedded
-    @AttributeOverrides({
-        @AttributeOverride(name = "dia",  column = @Column(name = "fecha_unido_dia")),
-        @AttributeOverride(name = "mes",  column = @Column(name = "fecha_unido_mes")),
-        @AttributeOverride(name = "anio", column = @Column(name = "fecha_unido_anio"))
-    })
-    private DtFecha fechaUnido;
+    @Column(name = "fecha_unido", nullable = false, updatable = false)
+    private LocalDateTime fechaUnido;
+
+    @PrePersist
+    protected void onCreate() {
+        this.fechaUnido = LocalDateTime.now();
+    }
+
+    public MiembroChat() {}
 
     public MiembroChatId getId() { return id; }
     public void setId(MiembroChatId id) { this.id = id; }
+    
     public Usuario getUsuario() { return usuario; }
     public void setUsuario(Usuario usuario) { this.usuario = usuario; }
+    
     public Chat getChat() { return chat; }
     public void setChat(Chat chat) { this.chat = chat; }
+    
     public ChatRol getChatRol() { return chatRol; }
     public void setChatRol(ChatRol chatRol) { this.chatRol = chatRol; }
-    public DtFecha getFechaUnido() { return fechaUnido; }
-    public void setFechaUnido(DtFecha fechaUnido) { this.fechaUnido = fechaUnido; }
+    
+    public LocalDateTime getFechaUnido() { return fechaUnido; }
 }
