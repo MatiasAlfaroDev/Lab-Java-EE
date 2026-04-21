@@ -88,4 +88,102 @@ public class ChatService {
     public List<Chat> obtenerChats() {
         return chatDAO.obtenerTodosChats();
     }
+
+     @Transactional
+    public void agregarMiembro(int chatId, int adminId, int usuarioAgregarId) {
+
+        // 1. Obtener chat
+        Chat chat = chatDAO.buscarPorId(chatId);
+        if (chat == null) {
+            throw new RuntimeException("El chat no existe");
+        }
+
+        // 2. Validar tipo (solo grupal)
+        if (chat.getTipo() != TipoChat.GRUPO) {
+            throw new RuntimeException("Solo se pueden agregar miembros a chats grupales");
+        }
+
+        // 3. Verificar que el admin pertenece al chat
+        MiembroChat admin = chatDAO.buscarMiembro(chatId, adminId);
+        if (admin == null) {
+            throw new RuntimeException("No perteneces al chat");
+        }
+
+        // 4. Verificar permisos
+        if (admin.getChatRol() != ChatRol.ADMINISTRADOR && admin.getChatRol() != ChatRol.CREADOR) {
+            throw new RuntimeException("No tienes permisos");
+        }
+
+        // 5. Verificar usuario a agregar
+        Usuario usuario = usuarioDAO.buscarPorId(usuarioAgregarId);
+        if (usuario == null) {
+            throw new RuntimeException("Usuario no existe");
+        }
+
+        // 6. Verificar que no esté ya en el chat
+        MiembroChat existente = chatDAO.buscarMiembro(chatId, usuarioAgregarId);
+        if (existente != null) {
+            throw new RuntimeException("El usuario ya está en el chat");
+        }
+
+        // 7. Crear miembro
+        MiembroChat miembro = new MiembroChat();
+        miembro.setChat(chat);
+        miembro.setUsuario(usuario);
+        miembro.setChatRol(ChatRol.MIEMBRO);
+
+        MiembroChatId id = new MiembroChatId(usuarioAgregarId, chatId);
+        miembro.setId(id);
+
+        // 8. Guardar
+        em.persist(miembro);
+    }
+
+    @Transactional
+    public void eliminarMiembro(int chatId, int adminId, int usuarioEliminarId) {
+
+        Chat chat = chatDAO.buscarPorId(chatId);
+        if (chat == null) {
+            throw new RuntimeException("El chat no existe");
+        }
+
+        // solo grupales
+        if (chat.getTipo() != TipoChat.GRUPO) {
+            throw new RuntimeException("Solo se pueden eliminar miembros en chats grupales");
+        }
+
+        // validar admin
+        MiembroChat admin = chatDAO.buscarMiembro(chatId, adminId);
+        if (admin == null) {
+            throw new RuntimeException("No perteneces al chat");
+        }
+
+        if (admin.getChatRol() != ChatRol.ADMINISTRADOR &&
+            admin.getChatRol() != ChatRol.CREADOR) {
+            throw new RuntimeException("No tienes permisos");
+        }
+
+        // validar que exista el miembro
+        MiembroChat miembro = chatDAO.buscarMiembro(chatId, usuarioEliminarId);
+        if (miembro == null) {
+            throw new RuntimeException("El usuario no pertenece al chat");
+        }
+
+        if (miembro.getChatRol() == ChatRol.CREADOR) {
+        List<MiembroChat> miembros = chatDAO.obtenerMiembros(chatId);
+
+        boolean hayOtroAdmin = miembros.stream().anyMatch(m ->
+            m.getChatRol() == ChatRol.ADMINISTRADOR &&
+            m.getUsuario().getId() != usuarioEliminarId
+        );
+
+        if (!hayOtroAdmin) {
+            throw new RuntimeException("No se puede eliminar al creador sin otro administrador");
+        }
+    }
+        // eliminar
+        chatDAO.eliminarMiembro(chatId, usuarioEliminarId);
+    }
+
+
 }

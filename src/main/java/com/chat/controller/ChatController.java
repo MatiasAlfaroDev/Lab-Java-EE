@@ -2,6 +2,8 @@ package com.chat.controller;
 
 import com.chat.service.ChatService;
 import com.chat.datatype.CrearChatRequest;
+import com.chat.datatype.AgregarMiembroRequest;
+import com.chat.datatype.EliminarMiembroRequest;
 import com.chat.model.Chat;
 import com.chat.security.TokenService;
 
@@ -67,5 +69,90 @@ public class ChatController {
     public Response obtenerChats() {
         List<Chat> chats = chatService.obtenerChats();
         return Response.ok(chats).build();
+    }
+
+    @POST
+    @Path("/agregar-miembro")
+    public Response agregarMiembro(
+        AgregarMiembroRequest request,
+        @HeaderParam("Authorization") String token
+    ) {
+        try {
+            // VALIDAR TOKEN
+            if (token == null || token.isBlank()) {
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity("Falta token")
+                        .build();
+            }
+
+            Long adminId = tokenService.validarToken(token);
+
+            // Validación básica
+            if (request == null ||
+                request.getChatId() <= 0 ||
+                request.getUsuarioId() <= 0) {
+
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity("Datos inválidos")
+                        .build();
+            }
+
+            chatService.agregarMiembro(
+                request.getChatId(),
+                adminId.intValue(), 
+                request.getUsuarioId()
+            );
+
+            return Response.ok("Miembro agregado correctamente").build();
+
+        } catch (RuntimeException e) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(e.getMessage())
+                    .build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .entity("Token inválido")
+                    .build();
+        }
+    }
+
+    @POST
+    @Path("/eliminar-miembro")
+    public Response eliminarMiembro(
+        EliminarMiembroRequest request,
+        @HeaderParam("Authorization") String token
+    ) {
+        try {
+
+            if (token == null || token.isBlank()) {
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity("Falta token")
+                        .build();
+            }
+
+            Long adminId = tokenService.validarToken(token);
+
+            if (request == null ||
+                request.getChatId() <= 0 ||
+                request.getUsuarioId() <= 0) {
+
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity("Datos inválidos")
+                        .build();
+            }
+
+            chatService.eliminarMiembro(
+                request.getChatId(),
+                adminId.intValue(),
+                request.getUsuarioId()
+            );
+
+            return Response.ok("Miembro eliminado").build();
+
+        } catch (Exception e) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(e.getMessage())
+                    .build();
+        }
     }
 }
