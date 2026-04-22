@@ -17,4 +17,10 @@ public class LoginResponse {
     public UsuarioDTO getUsuario() {
         return usuario;
     }
+    public void setToken(String token) {
+        this.token = token;
+    }
+    public void setUsuario(UsuarioDTO usuario) {
+        this.usuario = usuario;
+    }
 }
