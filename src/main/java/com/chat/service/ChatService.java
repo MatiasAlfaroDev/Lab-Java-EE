@@ -142,6 +142,10 @@ public class ChatService {
         return chatDAO.obtenerTodosChats();
     }
 
+    public List<Chat> obtenerChatsPorUsuario(Long userId) {
+        return chatDAO.obtenerChatsPorUsuario(userId.intValue());
+    }
+
      @Transactional
     public void agregarMiembro(int chatId, int adminId, int usuarioAgregarId) {
 

@@ -71,6 +71,8 @@ public class ChatController {
     @GET
     public Response obtenerChats(@HeaderParam("Authorization") String token) {
 
+        System.out.println("TOKEN RECIBIDO: [" + token + "]");
+
         try {
             if (token == null || token.isBlank()) {
                 return Response.status(Response.Status.UNAUTHORIZED)
@@ -80,7 +82,7 @@ public class ChatController {
 
             Long userId = tokenService.validarToken(token);
 
-            List<Chat> chats = chatService.obtenerChats();
+            List<Chat> chats = chatService.obtenerChatsPorUsuario(userId);
 
             List<ChatDTO> resultado = chats.stream()
                 .map(chat -> new ChatDTO(

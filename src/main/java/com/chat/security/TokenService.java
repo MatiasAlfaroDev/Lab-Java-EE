@@ -17,6 +17,13 @@ public class TokenService {
     }
 
     public Long validarToken(String token) {
+
+        if (token == null || token.isBlank()) {
+            throw new RuntimeException("Token inválido");
+        }
+
+        token = token.trim(); 
+
         Long userId = tokens.get(token);
 
         if (userId == null) {
@@ -27,6 +34,8 @@ public class TokenService {
     }
 
     public void eliminarToken(String token) {
-        tokens.remove(token);
+        if (token != null) {
+            tokens.remove(token.trim());
+        }
     }
 }
