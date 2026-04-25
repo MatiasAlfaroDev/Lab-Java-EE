@@ -2,22 +2,31 @@ package com.chat.security;
 
 import com.chat.model.Usuario;
 import jakarta.enterprise.context.ApplicationScoped;
+import java.util.HashMap;
+import java.util.Map;
 
 @ApplicationScoped
 public class TokenService {
 
-    // generar token simple (después se puede mejorar a JWT)
+    private Map<String, Long> tokens = new HashMap<>();
+
     public String generarToken(Usuario user) {
-        return user.getId() + "-token";
+        String token = user.getId() + "-token";
+        tokens.put(token, (long) user.getId());
+        return token;
     }
 
-    // validar token y obtener userId
     public Long validarToken(String token) {
-        try {
-            String id = token.split("-")[0];
-            return Long.parseLong(id);
-        } catch (Exception e) {
+        Long userId = tokens.get(token);
+
+        if (userId == null) {
             throw new RuntimeException("Token inválido");
         }
+
+        return userId;
+    }
+
+    public void eliminarToken(String token) {
+        tokens.remove(token);
     }
 }
