@@ -3,6 +3,7 @@ package com.chat.model;
 import java.time.LocalDateTime;
 import com.chat.enums.TipoChat;
 import jakarta.persistence.*;
+import java.util.List;
 
 @Entity
 @Table(name = "chat")
@@ -25,6 +26,13 @@ public class Chat {
     @PrePersist
     protected void onCreate() {
         this.fechaCreacion = LocalDateTime.now();
+    }
+
+    @OneToMany(mappedBy = "chat")
+    private List<MiembroChat> miembros;
+
+    public List<MiembroChat> getMiembros() {
+        return miembros;
     }
 
     public int getChatId() { return chatId; }

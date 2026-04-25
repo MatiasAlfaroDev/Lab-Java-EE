@@ -27,7 +27,7 @@ public class ChatService {
     private EntityManager em;
 
     @Transactional
-    public void crearChat(String nombre, String tipo, List<Integer> usuariosIds, Long userId) {
+    public Chat crearChat(String nombre, String tipo, List<Integer> usuariosIds, Long userId) {
 
         // 1. Validaciones básicas
         if (nombre == null || tipo == null || usuariosIds == null || usuariosIds.isEmpty()) {
@@ -41,23 +41,74 @@ public class ChatService {
         } catch (Exception e) {
             throw new IllegalArgumentException("Tipo de chat inválido");
         }
+        
+        int cantidad = usuariosIds.size();
+
+        if (tipoChat == TipoChat.PRIVADO) {
+            if (cantidad != 1 && cantidad != 2) {
+                throw new RuntimeException("Un chat privado debe tener 1 o 2 usuarios");
+            }
+        }
+
+        if (tipoChat == TipoChat.GRUPO) {
+            if (cantidad < 3) {
+                throw new RuntimeException("Un chat grupal debe tener al menos 3 usuarios");
+            }
+        } 
 
         // 3. Validar que el creador esté en la lista
         if (!usuariosIds.contains(userId.intValue())) {
             throw new RuntimeException("El creador debe estar en la lista de usuarios");
         }
 
-        // 4. Crear chat
+        // 4. Validar que los usuarios existan
+        for (Integer userIdLista : usuariosIds) {
+
+            Usuario usuario = usuarioDAO.buscarPorId(userIdLista);
+
+            if (usuario == null) {
+                throw new RuntimeException("Usuario no existe: " + userIdLista);
+            }
+        }
+
+        // 5. Validar que no exista un chat privado con los mismos usuarios
+        if (tipoChat == TipoChat.PRIVADO) {
+
+            // caso 1: chat con uno mismo
+            if (usuariosIds.size() == 1) {
+                Integer user = usuariosIds.get(0);
+
+                Chat existente = chatDAO.buscarChatPrivado(user, user);
+
+                if (existente != null) {
+                    return existente;
+                }
+            }
+
+            // caso 2: chat entre dos usuarios
+            if (usuariosIds.size() == 2) {
+                Integer user1 = usuariosIds.get(0);
+                Integer user2 = usuariosIds.get(1);
+
+                Chat existente = chatDAO.buscarChatPrivado(user1, user2);
+
+                if (existente != null) {
+                    return existente;
+                }
+            }
+        }
+
+        // 6. Crear chat
         Chat chat = new Chat();
         chat.setNombre(nombre);
-        chat.setTipo(TipoChat.valueOf(tipo));
+        chat.setTipo(tipoChat);
 
         chatDAO.guardar(chat);
 
         // IMPORTANTE: para tener el chatId
         em.flush();
 
-        // 5. Crear miembros
+        // 7. Crear miembros
         for (Integer userIdLista : usuariosIds) {
 
             Usuario usuario = usuarioDAO.buscarPorId(userIdLista);
@@ -83,6 +134,8 @@ public class ChatService {
 
             em.persist(miembro);
         }
+
+        return chat;
     }
 
     public List<Chat> obtenerChats() {
@@ -183,6 +236,27 @@ public class ChatService {
     }
         // eliminar
         chatDAO.eliminarMiembro(chatId, usuarioEliminarId);
+    }
+
+    private String obtenerNombre(Chat chat, int usuarioActualId) {
+
+        if (chat.getTipo() == TipoChat.PRIVADO) {
+
+            List<MiembroChat> miembros = chat.getMiembros();
+
+            if (miembros.size() == 1) {
+                return miembros.get(0).getUsuario().getNombre();
+            }
+
+            return miembros.stream()
+                .filter(m -> m.getUsuario().getId() != usuarioActualId)
+                .findFirst()
+                .get()
+                .getUsuario()
+                .getNombre();
+        }
+
+        return chat.getNombre();
     }
 
 

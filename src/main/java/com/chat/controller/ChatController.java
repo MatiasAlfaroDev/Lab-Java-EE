@@ -3,8 +3,11 @@ package com.chat.controller;
 import com.chat.service.ChatService;
 import com.chat.datatype.CrearChatRequest;
 import com.chat.datatype.AgregarMiembroRequest;
+import com.chat.datatype.ChatDTO;
 import com.chat.datatype.EliminarMiembroRequest;
+import com.chat.enums.TipoChat;
 import com.chat.model.Chat;
+import com.chat.model.MiembroChat;
 import com.chat.security.TokenService;
 
 import jakarta.inject.Inject;
@@ -66,9 +69,33 @@ public class ChatController {
     }
 
     @GET
-    public Response obtenerChats() {
-        List<Chat> chats = chatService.obtenerChats();
-        return Response.ok(chats).build();
+    public Response obtenerChats(@HeaderParam("Authorization") String token) {
+
+        try {
+            if (token == null || token.isBlank()) {
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity("Falta token")
+                        .build();
+            }
+
+            Long userId = tokenService.validarToken(token);
+
+            List<Chat> chats = chatService.obtenerChats();
+
+            List<ChatDTO> resultado = chats.stream()
+                .map(chat -> new ChatDTO(
+                    chat.getChatId(),
+                    obtenerNombre(chat, userId.intValue())
+                ))
+                .toList();
+
+            return Response.ok(resultado).build();
+
+        } catch (Exception e) {
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .entity("Token inválido")
+                    .build();
+        }
     }
 
     @POST
@@ -154,5 +181,26 @@ public class ChatController {
                     .entity(e.getMessage())
                     .build();
         }
+    }
+
+    private String obtenerNombre(Chat chat, int usuarioActualId) {
+
+        if (chat.getTipo() == TipoChat.PRIVADO) {
+
+            List<MiembroChat> miembros = chat.getMiembros();
+
+            if (miembros.size() == 1) {
+                return miembros.get(0).getUsuario().getNombre();
+            }
+
+            return miembros.stream()
+                .filter(m -> m.getUsuario().getId() != usuarioActualId)
+                .findFirst()
+                .get()
+                .getUsuario()
+                .getNombre();
+        }
+
+        return chat.getNombre();
     }
 }
