@@ -1,7 +1,5 @@
 package com.chat.model;
 
-import com.chat.datatype.DtFecha;
-import com.chat.enums.EstadoMensaje;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -20,6 +18,11 @@ public class Mensaje {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "chat_id", nullable = false)
     private Chat chat;
+
+    // Relación opcional para mensajes que son respuestas a otros mensajes
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "mensaje_referencia_id")
+    private Mensaje mensajeReferencia;
 
     @Column(nullable = false, columnDefinition = "text")
     private String contenido;
