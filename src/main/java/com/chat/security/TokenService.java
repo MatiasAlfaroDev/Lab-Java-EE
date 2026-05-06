@@ -22,7 +22,8 @@ public class TokenService {
             throw new RuntimeException("Token inválido");
         }
 
-        token = token.trim(); 
+        token = token.replace("Bearer ", "").trim();
+         
 
         Long userId = tokens.get(token);
 
