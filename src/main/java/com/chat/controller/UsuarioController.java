@@ -72,4 +72,27 @@ public class UsuarioController {
                            .build();
         }
     }
+
+    // LOGOUT
+    @POST
+    @Path("/logout")
+    public Response logout(@HeaderParam("Authorization") String token) {
+
+        try {
+            if (token == null || token.isBlank()) {
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity("Falta token")
+                        .build();
+            }
+
+            tokenService.eliminarToken(token);
+
+            return Response.ok("Logout exitoso").build();
+
+        } catch (Exception e) {
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .entity("Token inválido")
+                    .build();
+        }
+    }
 }

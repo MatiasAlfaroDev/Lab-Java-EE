@@ -1,5 +1,11 @@
 package com.chat.model;
 
+<<<<<<< feature/auth-login-logout
+import com.chat.enums.EstadoMensaje;
+import com.chat.enums.TipoMensaje;
+
+=======
+>>>>>>> main
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -18,6 +24,14 @@ public class Mensaje {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "chat_id", nullable = false)
     private Chat chat;
+    
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private TipoMensaje tipo;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private EstadoMensaje estado;
 
     // Relación opcional para mensajes que son respuestas a otros mensajes
     @ManyToOne(fetch = FetchType.LAZY)
@@ -52,7 +66,13 @@ public class Mensaje {
     public void setContenido(String contenido) { this.contenido = contenido; }
     
     public LocalDateTime getFechaEnviado() { return fechaEnviado; }
-   
+    public void setFechaEnviado(LocalDateTime fechaEnviado) { this.fechaEnviado = fechaEnviado; }    
     public boolean isEditado() { return editado; }
     public void setEditado(boolean editado) { this.editado = editado; }
+    
+    public TipoMensaje getTipo() { return tipo; }
+    public void setTipo(TipoMensaje tipo) { this.tipo = tipo; }
+    
+    public EstadoMensaje getEstado() { return estado; }
+    public void setEstado(EstadoMensaje estado) { this.estado = estado; }
 }

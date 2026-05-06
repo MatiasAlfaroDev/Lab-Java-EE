@@ -45,16 +45,26 @@ public class ChatService {
         int cantidad = usuariosIds.size();
 
         if (tipoChat == TipoChat.PRIVADO) {
-            if (cantidad != 1 && cantidad != 2) {
-                throw new RuntimeException("Un chat privado debe tener 1 o 2 usuarios");
+            if (cantidad != 2) {
+                throw new RuntimeException("Un chat privado debe tener 2 usuarios");
             }
         }
 
         if (tipoChat == TipoChat.GRUPO) {
-            if (cantidad < 3) {
-                throw new RuntimeException("Un chat grupal debe tener al menos 3 usuarios");
+            if (cantidad < 2) {
+                throw new RuntimeException("Un chat grupal debe tener al menos 2 usuarios");
             }
         } 
+
+        if (tipoChat == TipoChat.INDIVIDUAL) {
+            if (cantidad != 1) 
+                throw new RuntimeException("Un chat individual debe tener 1 usuario");
+            
+            if (!usuariosIds.get(0).equals(userId.intValue())) 
+                throw new RuntimeException("El chat individual debe ser del usuario logueado");
+
+        }
+        
 
         // 3. Validar que el creador esté en la lista
         if (!usuariosIds.contains(userId.intValue())) {
@@ -140,6 +150,10 @@ public class ChatService {
 
     public List<Chat> obtenerChats() {
         return chatDAO.obtenerTodosChats();
+    }
+
+    public List<Chat> obtenerChatsPorUsuario(Long userId) {
+        return chatDAO.obtenerChatsPorUsuario(userId.intValue());
     }
 
      @Transactional
