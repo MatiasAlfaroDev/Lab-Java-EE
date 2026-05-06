@@ -1,8 +1,11 @@
 package com.chat.model;
 
+<<<<<<< feature/auth-login-logout
 import com.chat.enums.EstadoMensaje;
 import com.chat.enums.TipoMensaje;
 
+=======
+>>>>>>> main
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -29,6 +32,11 @@ public class Mensaje {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private EstadoMensaje estado;
+
+    // Relación opcional para mensajes que son respuestas a otros mensajes
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "mensaje_referencia_id")
+    private Mensaje mensajeReferencia;
 
     @Column(nullable = false, columnDefinition = "text")
     private String contenido;

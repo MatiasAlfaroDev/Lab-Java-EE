@@ -25,6 +25,9 @@ public class MensajeUsuario {
     @Column(name = "fecha_leido")
     private LocalDateTime fechaLeido;
 
+    @Column(name = "fecha_eliminado")
+    private LocalDateTime fechaEliminado;   
+
     @Column(nullable = false)
     private boolean eliminado;
 
