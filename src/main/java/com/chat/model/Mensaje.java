@@ -1,11 +1,8 @@
 package com.chat.model;
 
-<<<<<<< feature/auth-login-logout
 import com.chat.enums.EstadoMensaje;
 import com.chat.enums.TipoMensaje;
 
-=======
->>>>>>> main
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
