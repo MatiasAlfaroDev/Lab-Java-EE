@@ -32,7 +32,7 @@ public class Usuario {
     @Column(nullable = false, length = 100)
     private String rol;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String mfa_secret;  
 
     @OneToMany(mappedBy = "usuario")
