@@ -6,6 +6,7 @@ import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 import jakarta.enterprise.context.ApplicationScoped;
+import java.util.List;
 
 @ApplicationScoped
 public class UsuarioDAO {
@@ -47,5 +48,12 @@ public class UsuarioDAO {
 
     public Usuario buscarPorId(int id) {
     return em.find(Usuario.class, id);
+    }
+
+    public List<Usuario> listar() {
+    return em.createQuery(
+            "SELECT u FROM Usuario u",
+            Usuario.class
+    ).getResultList();
 }
-}
+} 

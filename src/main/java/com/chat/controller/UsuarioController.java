@@ -95,4 +95,19 @@ public class UsuarioController {
                     .build();
         }
     }
+
+    @GET
+    @Path("/listar")
+    public Response listarUsuarios() {
+        try {
+            var usuarios = usuarioService.listarUsuarios();
+
+        return Response.ok(usuarios).build();
+
+    } catch (Exception e) {
+        return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                .entity("Error al obtener usuarios")
+                .build();
+    }
+    }
 }

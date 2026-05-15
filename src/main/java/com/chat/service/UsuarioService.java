@@ -1,11 +1,13 @@
 package com.chat.service;
 
 import com.chat.dao.UsuarioDAO;
+import com.chat.datatype.UsuarioDTO;
 import com.chat.model.Usuario;
 import com.chat.enums.TipoEstado;
 import org.mindrot.jbcrypt.BCrypt;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.util.List;
 
 @ApplicationScoped
 public class UsuarioService {
@@ -64,5 +66,18 @@ public class UsuarioService {
         usuarioDAO.actualizar(usuario);
 
         return usuario;
-}
+    }
+
+    public List<UsuarioDTO> listarUsuarios() {
+    return usuarioDAO.listar()
+            .stream()
+            .map(u -> new UsuarioDTO(
+                    u.getId(),
+                    u.getNombre(),
+                    u.getEmail(),
+                    u.getRol(),
+                    u.getEstado().name()
+            ))
+            .toList();
+    }
 }
