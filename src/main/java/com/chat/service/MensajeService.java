@@ -23,7 +23,7 @@ public class MensajeService {
     @Inject
     private UsuarioDAO usuarioDAO;
 
-    @Transactional
+   /* @Transactional
     public void enviarMensaje(int chatId, int userId, String contenido, TipoMensaje tipo) {
 
         Mensaje mensaje = new Mensaje();
@@ -55,6 +55,38 @@ public class MensajeService {
             mensaje.setContenido(contenido); 
         }
 
+        mensajeDAO.guardar(mensaje);
+    } */
+
+    @Transactional
+    public void enviarMensaje(int chatId, int userId, String contenido, TipoMensaje tipo) {
+
+        // 1. validaciones
+        Chat chat = chatDAO.buscarPorId(chatId);
+        Usuario usuario = usuarioDAO.buscarPorId(userId);
+
+        if (chat == null || usuario == null) {
+            throw new RuntimeException("Datos inválidos");
+        }
+
+        boolean pertenece = chat.getMiembros()
+                .stream()
+                .anyMatch(m -> m.getUsuario().getId() == userId);
+
+        if (!pertenece) {
+            throw new RuntimeException("No pertenece al chat");
+        }
+
+        // 2. crear mensaje
+        Mensaje mensaje = new Mensaje();
+
+        mensaje.setChat(chat);
+        mensaje.setEmisor(usuario);
+        mensaje.setContenido(contenido);
+        mensaje.setTipo(tipo);
+        mensaje.setEstado(EstadoMensaje.ENVIADO);
+
+        // 3. guardar
         mensajeDAO.guardar(mensaje);
     }
 }

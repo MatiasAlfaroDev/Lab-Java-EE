@@ -52,14 +52,19 @@ public class ChatController {
                         .build();
             }
 
-            chatService.crearChat(
+            Chat chat = chatService.crearChat(
                 request.getNombre(),
                 request.getTipo(),
                 request.getUsuarios(),
                 userId
             );
 
-            return Response.ok("Chat creado correctamente").build();
+            ChatDTO dto = new ChatDTO(
+                chat.getChatId(),
+                chat.getNombre()
+            );
+
+            return Response.ok(dto).build();
 
         } catch (Exception e) {
             return Response.status(Response.Status.UNAUTHORIZED)
