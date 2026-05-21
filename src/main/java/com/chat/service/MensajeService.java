@@ -10,6 +10,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import java.time.LocalDateTime;
+import com.chat.websocket.ChatWebSocket;
 
 @ApplicationScoped
 public class MensajeService {
@@ -88,5 +89,25 @@ public class MensajeService {
 
         // 3. guardar
         mensajeDAO.guardar(mensaje);
-    }
+
+        // 4. enviar por WebSocket
+        String json = String.format(
+             """
+            {
+                "id": "%d",
+                "chatId": "%d",
+                "remitente": "%s",
+                "remitenteId": "%d",
+                "contenido": "%s"
+            }
+            """,
+            mensaje.getId(),
+            chat.getChatId(),
+            usuario.getNombre(),
+            usuario.getId(),
+            contenido
+        );
+
+        ChatWebSocket.broadcast(json);
+        }
 }
