@@ -11,12 +11,12 @@ public class MiembroChat {
     @EmbeddedId
     private MiembroChatId id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @MapsId("usuarioId")
     @JoinColumn(name = "usuario_id")
     private Usuario usuario;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @MapsId("chatId")
     @JoinColumn(name = "chat_id")
     private Chat chat;

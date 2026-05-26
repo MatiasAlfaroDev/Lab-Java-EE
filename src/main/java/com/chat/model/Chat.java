@@ -28,7 +28,7 @@ public class Chat {
         this.fechaCreacion = LocalDateTime.now();
     }
 
-    @OneToMany(mappedBy = "chat")
+    @OneToMany(mappedBy = "chat", fetch = FetchType.EAGER)
     private List<MiembroChat> miembros;
 
     public List<MiembroChat> getMiembros() {

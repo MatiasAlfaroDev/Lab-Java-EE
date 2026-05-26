@@ -156,6 +156,10 @@ public class ChatService {
         return chatDAO.obtenerChatsPorUsuario(userId.intValue());
     }
 
+    public String obtenerUltimoMensaje(int chatId) {
+        return chatDAO.obtenerUltimoMensaje(chatId);
+    }
+
      @Transactional
     public void agregarMiembro(int chatId, int adminId, int usuarioAgregarId) {
 
