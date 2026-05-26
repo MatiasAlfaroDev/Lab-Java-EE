@@ -74,4 +74,15 @@ public class MensajeController {
                     .build();
         }
     }
+
+    @GET
+    @Path("/chat/{chatId}")
+    public Response listarMensajes(
+            @PathParam("chatId") int chatId
+    ) {
+
+        return Response.ok(
+            mensajeService.listar(chatId)
+        ).build();
+    }
 }

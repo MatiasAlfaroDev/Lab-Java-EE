@@ -3,6 +3,7 @@ package com.chat.service;
 import com.chat.dao.MensajeDAO;
 import com.chat.dao.ChatDAO;
 import com.chat.dao.UsuarioDAO;
+import com.chat.datatype.MensajeResponse;
 import com.chat.model.*;
 import com.chat.enums.TipoMensaje;
 import com.chat.enums.EstadoMensaje;
@@ -11,6 +12,7 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import java.time.LocalDateTime;
 import com.chat.websocket.ChatWebSocket;
+import java.util.List;
 
 @ApplicationScoped
 public class MensajeService {
@@ -110,4 +112,34 @@ public class MensajeService {
 
         ChatWebSocket.broadcast(json);
         }
+
+    public List<MensajeResponse> listar(int chatId) {
+
+        List<Mensaje> mensajes =
+            mensajeDAO.listarPorChat(chatId);
+
+        return mensajes.stream().map(m -> {
+            MensajeResponse dto =
+                new MensajeResponse();
+            dto.id = m.getId();
+            dto.chatId =
+                m.getChat().getChatId();
+            dto.sender_id =
+                m.getEmisor().getId();
+            dto.sender_username =
+                m.getEmisor().getNombre();
+            dto.sender_initials =
+                m.getEmisor()
+                .getNombre()
+                .substring(0, 2)
+                .toUpperCase();
+            dto.contenido =
+                m.getContenido();
+            dto.sent_at =
+                m.getFechaEnviado().toString();
+            dto.estado =
+                m.getEstado().toString();
+            return dto;
+        }).toList();
+    }
 }

@@ -252,24 +252,14 @@ public class ChatService {
         chatDAO.eliminarMiembro(chatId, usuarioEliminarId);
     }
 
-    private String obtenerNombre(Chat chat, int usuarioActualId) {
-
+    public String obtenerNombre(Chat chat, int usuarioActualId) {
         if (chat.getTipo() == TipoChat.PRIVADO) {
-
-            List<MiembroChat> miembros = chat.getMiembros();
-
-            if (miembros.size() == 1) {
-                return miembros.get(0).getUsuario().getNombre();
-            }
-
-            return miembros.stream()
+            return chat.getMiembros().stream()
                 .filter(m -> m.getUsuario().getId() != usuarioActualId)
+                .map(m -> m.getUsuario().getNombre())
                 .findFirst()
-                .get()
-                .getUsuario()
-                .getNombre();
+                .orElse(chat.getNombre());
         }
-
         return chat.getNombre();
     }
 

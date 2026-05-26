@@ -89,18 +89,31 @@ public class ChatController {
 
             List<Chat> chats = chatService.obtenerChatsPorUsuario(userId);
 
+            System.out.println("CHATS SIZE: " + chats.size());
+
+            for (Chat c : chats) {
+                System.out.println("CHAT ID: " + c.getChatId());
+                System.out.println("MIEMBROS: " + (c.getMiembros() != null ? c.getMiembros().size() : "NULL"));
+            }
+
             List<ChatDTO> resultado = chats.stream()
                 .map(chat -> new ChatDTO(
                     chat.getChatId(),
-                    obtenerNombre(chat, userId.intValue())
+                    chatService.obtenerNombre(chat, userId.intValue())
                 ))
                 .toList();
 
             return Response.ok(resultado).build();
 
+        } catch (RuntimeException e) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(e.getMessage())
+                    .build();
+
         } catch (Exception e) {
-            return Response.status(Response.Status.UNAUTHORIZED)
-                    .entity("Token inválido")
+            e.printStackTrace();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("Error interno en /chats")
                     .build();
         }
     }
@@ -190,7 +203,7 @@ public class ChatController {
         }
     }
 
-    private String obtenerNombre(Chat chat, int usuarioActualId) {
+    /*private String obtenerNombre(Chat chat, int usuarioActualId) {
 
         if (chat.getTipo() == TipoChat.PRIVADO) {
 
@@ -209,5 +222,5 @@ public class ChatController {
         }
 
         return chat.getNombre();
-    }
+    }*/
 }
