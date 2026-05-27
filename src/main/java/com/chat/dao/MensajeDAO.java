@@ -25,6 +25,21 @@ public class MensajeDAO {
         )
         .setParameter("chatId", chatId)
         .getResultList();
-}
+    }
+
+    public Long contarNoLeidos(int chatId, int usuarioId, java.time.LocalDateTime ultimoLeido) {
+
+        return em.createQuery("""
+            SELECT COUNT(m)
+            FROM Mensaje m
+            WHERE m.chat.chatId = :chatId
+            AND m.fechaEnviado > :ultimoLeido
+            AND m.emisor.id != :usuarioId
+        """, Long.class)
+        .setParameter("chatId", chatId)
+        .setParameter("ultimoLeido", ultimoLeido)
+        .setParameter("usuarioId", usuarioId)
+        .getSingleResult();
+    }
     
 }

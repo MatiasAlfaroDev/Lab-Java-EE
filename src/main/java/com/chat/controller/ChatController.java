@@ -97,16 +97,7 @@ public class ChatController {
                 System.out.println("MIEMBROS: " + (c.getMiembros() != null ? c.getMiembros().size() : "NULL"));
             }
 
-            List<ChatDTO> resultado = chats.stream()
-                .map(chat -> new ChatDTO(
-                    chat.getChatId(),
-                    chatService.obtenerNombre(chat, userId.intValue()),
-                    chatService.obtenerUltimoMensaje(chat.getChatId()),
-                    "",
-                    0
-                    
-                ))
-                .toList();
+            List<ChatDTO> resultado = chatService.obtenerChatsDTO(userId);
 
             return Response.ok(resultado).build();
 

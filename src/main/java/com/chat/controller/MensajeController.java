@@ -112,7 +112,7 @@ public class MensajeController {
             }
 
             return Response.ok(
-                    mensajeService.listar(chatId)
+                    mensajeService.listar(chatId, userId.intValue())
             ).build();
 
         } catch (Exception e) {
@@ -123,5 +123,41 @@ public class MensajeController {
         }
 
     }
+
+    @POST
+    @Path("/{chatId}/leer")
+    public Response marcarComoLeido(@PathParam("chatId") int chatId, @HeaderParam("Authorization") String token) {
+
+        try {
+
+            if (token == null || token.isBlank()) {
+
+                return Response.status(
+                    Response.Status.UNAUTHORIZED
+                )
+                .entity("Falta token")
+                .build();
+            }
+
+            Long userId =
+                tokenService.validarToken(token);
+
+            mensajeService.marcarComoLeido(
+                chatId,
+                userId.intValue()
+            );
+
+            return Response.ok().build();
+
+        } catch (Exception e) {
+
+            return Response.status(
+                Response.Status.BAD_REQUEST
+            )
+            .entity(e.getMessage())
+            .build();
+        }
+    }
+
 
 }

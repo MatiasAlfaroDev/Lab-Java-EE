@@ -98,6 +98,13 @@ public class UsuarioController {
                         .build();
             }
 
+            Long userId =
+                tokenService.validarToken(token);
+
+            usuarioService.logout(
+                userId.intValue()
+            );
+
             tokenService.eliminarToken(token);
 
             return Response.ok("Logout exitoso").build();
