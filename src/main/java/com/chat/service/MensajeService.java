@@ -83,8 +83,8 @@ public class MensajeService {
         ChatWebSocket.broadcast(json);
         }
 
-    public List<MensajeResponse> listar(int chatId) {
-
+    public List<MensajeResponse> listar(int chatId, int userId) {
+        
         List<Mensaje> mensajes =
             mensajeDAO.listarPorChat(chatId);
 
@@ -126,6 +126,20 @@ public class MensajeService {
                         m.getUsuario().getId() == usuarioId
                 );
 
+    }
+
+    @Transactional
+    public void marcarComoLeido(int chatId, int usuarioId) {
+
+        MiembroChat miembro =
+            chatDAO.buscarMiembro(chatId, usuarioId);
+
+        if (miembro != null) {
+
+            miembro.setUltimoLeido(
+                java.time.LocalDateTime.now()
+            );
+        }
     }
 
 }

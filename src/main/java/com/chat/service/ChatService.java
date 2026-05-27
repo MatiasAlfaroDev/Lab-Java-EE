@@ -2,6 +2,8 @@ package com.chat.service;
 
 import com.chat.dao.ChatDAO;
 import com.chat.dao.UsuarioDAO;
+import com.chat.datatype.ChatDTO;
+import com.chat.dao.MensajeDAO;
 import com.chat.model.*;
 import com.chat.enums.ChatRol;
 import com.chat.enums.TipoChat;
@@ -22,6 +24,9 @@ public class ChatService {
 
     @Inject
     private UsuarioDAO usuarioDAO;
+
+    @Inject
+    private MensajeDAO mensajeDAO;
 
     @PersistenceContext
     private EntityManager em;
@@ -157,7 +162,51 @@ public class ChatService {
     }
 
     public String obtenerUltimoMensaje(int chatId) {
+
         return chatDAO.obtenerUltimoMensaje(chatId);
+    }
+
+    public List<ChatDTO> obtenerChatsDTO(Long userId) {
+
+        List<Chat> chats =
+            chatDAO.obtenerChatsPorUsuario(
+                userId.intValue()
+            );
+
+        return chats.stream().map(chat -> {
+
+            MiembroChat miembro =
+                chat.getMiembros().stream()
+                    .filter(m ->
+                        m.getUsuario().getId()
+                        == userId.intValue()
+                    )
+                    .findFirst()
+                    .orElse(null);
+
+            int unread = 0;
+
+            if (
+                miembro != null &&
+                miembro.getUltimoLeido() != null
+            ) {
+
+                unread = mensajeDAO.contarNoLeidos(
+                    chat.getChatId(),
+                    userId.intValue(),
+                    miembro.getUltimoLeido()
+                ).intValue();
+            }
+
+            return new ChatDTO(
+                chat.getChatId(),
+                obtenerNombre(chat, userId.intValue()),
+                obtenerUltimoMensaje(chat.getChatId()),
+                "",
+                unread
+            );
+
+        }).toList();
     }
 
      @Transactional
@@ -256,14 +305,24 @@ public class ChatService {
         chatDAO.eliminarMiembro(chatId, usuarioEliminarId);
     }
 
-    public String obtenerNombre(Chat chat, int usuarioActualId) {
+    private String obtenerNombre(Chat chat, int usuarioActualId) {
+
         if (chat.getTipo() == TipoChat.PRIVADO) {
-            return chat.getMiembros().stream()
+
+            List<MiembroChat> miembros = chat.getMiembros();
+
+            if (miembros.size() == 1) {
+                return miembros.get(0).getUsuario().getNombre();
+            }
+
+            return miembros.stream()
                 .filter(m -> m.getUsuario().getId() != usuarioActualId)
-                .map(m -> m.getUsuario().getNombre())
                 .findFirst()
-                .orElse(chat.getNombre());
+                .get()
+                .getUsuario()
+                .getNombre();
         }
+
         return chat.getNombre();
     }
 

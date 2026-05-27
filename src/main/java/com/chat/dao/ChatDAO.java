@@ -34,8 +34,9 @@ public class ChatDAO {
         return em.createQuery("""
             SELECT DISTINCT c
             FROM Chat c
-            JOIN c.miembros m
-            WHERE m.usuario.id = :userId
+            JOIN FETCH c.miembros miembros
+            JOIN FETCH miembros.usuario
+            WHERE miembros.usuario.id = :userId
         """, Chat.class)
         .setParameter("userId", userId)
         .getResultList();
@@ -76,24 +77,28 @@ public class ChatDAO {
     .getResultList();
     }
 
-    public Chat buscarChatPrivado(int user1, int user2) {
+    public Chat buscarChatPrivado(
+        int user1,
+        int user2
+    ) {
+
         List<Chat> chats = em.createQuery("""
-            SELECT c FROM Chat c
-            JOIN MiembroChat m1 ON m1.chat = c
-            JOIN MiembroChat m2 ON m2.chat = c
+            SELECT c
+            FROM Chat c
+            JOIN c.miembros m
             WHERE c.tipo = :tipo
-            AND (
-                (m1.usuario.id = :user1 AND m2.usuario.id = :user2)
-                OR
-                (m1.usuario.id = :user2 AND m2.usuario.id = :user1)
-            )
+            AND m.usuario.id IN (:user1, :user2)
+            GROUP BY c
+            HAVING COUNT(DISTINCT m.usuario.id) = 2
         """, Chat.class)
         .setParameter("tipo", TipoChat.PRIVADO)
         .setParameter("user1", user1)
         .setParameter("user2", user2)
         .getResultList();
 
-        return chats.isEmpty() ? null : chats.get(0);
+        return chats.isEmpty()
+            ? null
+            : chats.get(0);
     }
 
     public String obtenerUltimoMensaje(int chatId) {

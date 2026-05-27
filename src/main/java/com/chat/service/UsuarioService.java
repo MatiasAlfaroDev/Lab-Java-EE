@@ -23,6 +23,18 @@ public class UsuarioService {
             throw new IllegalArgumentException("Datos inválidos");
         }
 
+        if (
+            !password.matches(
+                "^(?=.*[A-Z])(?=.*[^a-zA-Z0-9]).{8,}$"
+            )
+        ) {
+            throw new IllegalArgumentException(
+                "Contraseña inválida"
+            );
+        }
+
+        email = email.trim().toLowerCase();
+
         // 2. Verificar email existente
         if (usuarioDAO.existeEmail(email)) {
             throw new IllegalArgumentException("El email ya está en uso");
@@ -47,6 +59,17 @@ public class UsuarioService {
 
     public Usuario login(String email, String password) {
 
+         if (
+            email == null ||
+            password == null ||
+            email.isBlank() ||
+            password.isBlank()
+        ) {
+            throw new IllegalArgumentException("Datos inválidos");
+        }
+
+        email = email.trim().toLowerCase();
+
         // 1. Buscar usuario
         Usuario usuario = usuarioDAO.buscarEmail(email);
 
@@ -66,6 +89,19 @@ public class UsuarioService {
         usuarioDAO.actualizar(usuario);
 
         return usuario;
+    }
+
+    public void logout(int userId) {
+
+        Usuario usuario =
+            usuarioDAO.buscarPorId(userId);
+
+        if (usuario != null) {
+
+            usuario.setEstado(TipoEstado.OFFLINE);
+
+            usuarioDAO.actualizar(usuario);
+        }
     }
 
     public List<UsuarioDTO> listarUsuarios() {

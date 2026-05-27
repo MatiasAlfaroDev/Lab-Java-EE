@@ -28,9 +28,13 @@ public class MiembroChat {
     @Column(name = "fecha_unido", nullable = false, updatable = false)
     private LocalDateTime fechaUnido;
 
+    @Column(name = "ultimo_leido")
+    private LocalDateTime ultimoLeido;
+
     @PrePersist
     protected void onCreate() {
         this.fechaUnido = LocalDateTime.now();
+        this.ultimoLeido = LocalDateTime.now();
     }
 
     public MiembroChat() {}
@@ -48,4 +52,7 @@ public class MiembroChat {
     public void setChatRol(ChatRol chatRol) { this.chatRol = chatRol; }
     
     public LocalDateTime getFechaUnido() { return fechaUnido; }
+
+    public LocalDateTime getUltimoLeido() { return ultimoLeido; }
+    public void setUltimoLeido(LocalDateTime ultimoLeido) { this.ultimoLeido = ultimoLeido; }
 }
