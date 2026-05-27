@@ -28,6 +28,19 @@ public class UsuarioController {
     @Path("/registro")
     public Response registrarUsuario(Usuario request) {
         try {
+            if ( 
+                request == null || 
+                request.getNombre() == null || 
+                request.getNombre().isBlank() || 
+                request.getEmail() == null || 
+                request.getEmail().isBlank() || 
+                request.getPassword() == null || 
+                request.getPassword().isBlank() 
+            ) { 
+                return Response.status(Response.Status.BAD_REQUEST)
+                 .entity("Datos inválidos") 
+                 .build(); }
+
             usuarioService.registrarUsuario(
                 request.getNombre(),
                 request.getEmail(),
@@ -98,16 +111,28 @@ public class UsuarioController {
 
     @GET
     @Path("/listar")
-    public Response listarUsuarios() {
+    public Response listarUsuarios(@HeaderParam("Authorization") String token) {
+
         try {
+
+            if (token == null || token.isBlank()) {
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity("Falta token")
+                        .build();
+            }
+
+            tokenService.validarToken(token);
+
             var usuarios = usuarioService.listarUsuarios();
 
-        return Response.ok(usuarios).build();
+            return Response.ok(usuarios).build();
 
-    } catch (Exception e) {
-        return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                .entity("Error al obtener usuarios")
-                .build();
+        } catch (Exception e) {
+
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .entity("Token inválido")
+                    .build();
+        }
     }
-    }
+
 }

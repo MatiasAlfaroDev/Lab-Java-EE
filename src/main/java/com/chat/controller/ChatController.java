@@ -5,9 +5,7 @@ import com.chat.datatype.CrearChatRequest;
 import com.chat.datatype.AgregarMiembroRequest;
 import com.chat.datatype.ChatDTO;
 import com.chat.datatype.EliminarMiembroRequest;
-import com.chat.enums.TipoChat;
 import com.chat.model.Chat;
-import com.chat.model.MiembroChat;
 import com.chat.security.TokenService;
 
 import jakarta.inject.Inject;
@@ -61,7 +59,10 @@ public class ChatController {
 
             ChatDTO dto = new ChatDTO(
                 chat.getChatId(),
-                chat.getNombre()
+                chat.getNombre(),
+                "",
+                "",
+                0
             );
 
             return Response.ok(dto).build();
@@ -99,7 +100,11 @@ public class ChatController {
             List<ChatDTO> resultado = chats.stream()
                 .map(chat -> new ChatDTO(
                     chat.getChatId(),
-                    chatService.obtenerNombre(chat, userId.intValue())
+                    chatService.obtenerNombre(chat, userId.intValue()),
+                    chatService.obtenerUltimoMensaje(chat.getChatId()),
+                    "",
+                    0
+                    
                 ))
                 .toList();
 
@@ -202,25 +207,4 @@ public class ChatController {
                     .build();
         }
     }
-
-    /*private String obtenerNombre(Chat chat, int usuarioActualId) {
-
-        if (chat.getTipo() == TipoChat.PRIVADO) {
-
-            List<MiembroChat> miembros = chat.getMiembros();
-
-            if (miembros.size() == 1) {
-                return miembros.get(0).getUsuario().getNombre();
-            }
-
-            return miembros.stream()
-                .filter(m -> m.getUsuario().getId() != usuarioActualId)
-                .findFirst()
-                .get()
-                .getUsuario()
-                .getNombre();
-        }
-
-        return chat.getNombre();
-    }*/
 }

@@ -40,7 +40,7 @@ public class MensajeController {
             // 2. validar request básico
             if (request == null ||
                 request.getChatId() <= 0 ||
-                request.getContenido() == null ||
+                request.getContenido() == null || request.getContenido().isBlank() ||
                 request.getTipo() == null) {
 
                 return Response.status(Response.Status.BAD_REQUEST)
@@ -68,9 +68,17 @@ public class MensajeController {
 
             return Response.ok("Mensaje enviado").build();
 
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity(e.getMessage())
+                    .build();
+
+        } catch (Exception e) {
+
+            e.printStackTrace();
+
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("Error interno")
                     .build();
         }
     }
@@ -78,11 +86,42 @@ public class MensajeController {
     @GET
     @Path("/chat/{chatId}")
     public Response listarMensajes(
-            @PathParam("chatId") int chatId
-    ) {
+            @PathParam("chatId") int chatId,
+            @HeaderParam("Authorization") String token) {
 
-        return Response.ok(
-            mensajeService.listar(chatId)
-        ).build();
+        try {
+
+            if (token == null || token.isBlank()) {
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity("Falta token")
+                        .build();
+            }
+
+            Long userId = tokenService.validarToken(token);
+
+            boolean pertenece =
+                    mensajeService.usuarioPerteneceAlChat(
+                            chatId,
+                            userId.intValue()
+                    );
+
+            if (!pertenece) {
+                return Response.status(Response.Status.FORBIDDEN)
+                        .entity("No pertenece al chat")
+                        .build();
+            }
+
+            return Response.ok(
+                    mensajeService.listar(chatId)
+            ).build();
+
+        } catch (Exception e) {
+
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(e.getMessage())
+                    .build();
+        }
+
     }
+
 }
