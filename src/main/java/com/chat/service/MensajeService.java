@@ -10,7 +10,6 @@ import com.chat.enums.EstadoMensaje;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-import java.time.LocalDateTime;
 import com.chat.websocket.ChatWebSocket;
 import java.util.List;
 
@@ -25,41 +24,6 @@ public class MensajeService {
 
     @Inject
     private UsuarioDAO usuarioDAO;
-
-   /* @Transactional
-    public void enviarMensaje(int chatId, int userId, String contenido, TipoMensaje tipo) {
-
-        Mensaje mensaje = new Mensaje();
-        try {
-            // 1. validaciones
-            Chat chat = chatDAO.buscarPorId(chatId);
-            Usuario usuario = usuarioDAO.buscarPorId(userId);
-
-            if (chat == null || usuario == null) {
-                throw new RuntimeException("Datos inválidos");
-            }
-
-            boolean pertenece = chat.getMiembros()
-                    .stream()
-                    .anyMatch(m -> m.getUsuario().getId() == userId);
-
-            if (!pertenece) {
-                throw new RuntimeException("No pertenece al chat");
-            }
-
-            mensaje.setChat(chat);
-            mensaje.setEmisor(usuario);
-            mensaje.setContenido(contenido);
-            mensaje.setTipo(tipo);
-            mensaje.setEstado(EstadoMensaje.ENVIADO);
-
-        } catch (Exception e) {
-            mensaje.setEstado(EstadoMensaje.RECHAZADO);
-            mensaje.setContenido(contenido); 
-        }
-
-        mensajeDAO.guardar(mensaje);
-    } */
 
     @Transactional
     public void enviarMensaje(int chatId, int userId, String contenido, TipoMensaje tipo) {
@@ -93,6 +57,10 @@ public class MensajeService {
         mensajeDAO.guardar(mensaje);
 
         // 4. enviar por WebSocket
+        String contenidoSeguro = contenido
+            .replace("\"", "\\\"")
+            .replace("\n", " ");
+
         String json = String.format(
              """
             {
@@ -100,14 +68,16 @@ public class MensajeService {
                 "chatId": "%d",
                 "remitente": "%s",
                 "remitenteId": "%d",
-                "contenido": "%s"
+                "contenido": "%s",
+                "timestamp": "%s"
             }
             """,
             mensaje.getId(),
             chat.getChatId(),
             usuario.getNombre(),
             usuario.getId(),
-            contenido
+            contenidoSeguro,
+            mensaje.getFechaEnviado()
         );
 
         ChatWebSocket.broadcast(json);
@@ -142,4 +112,20 @@ public class MensajeService {
             return dto;
         }).toList();
     }
+
+    public boolean usuarioPerteneceAlChat(int chatId, int usuarioId) {
+
+        Chat chat = chatDAO.buscarPorId(chatId);
+
+        if (chat == null) {
+            return false;
+        }
+
+        return chat.getMiembros().stream()
+                .anyMatch(m ->
+                        m.getUsuario().getId() == usuarioId
+                );
+
+    }
+
 }
