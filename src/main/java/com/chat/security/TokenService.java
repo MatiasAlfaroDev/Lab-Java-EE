@@ -2,13 +2,13 @@ package com.chat.security;
 
 import com.chat.model.Usuario;
 import jakarta.enterprise.context.ApplicationScoped;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @ApplicationScoped
 public class TokenService {
 
-    private Map<String, Long> tokens = new HashMap<>();
+    private static final Map<String, Long> tokens = new ConcurrentHashMap<>();
 
     public String generarToken(Usuario user) {
         String token = user.getId() + "-token";
