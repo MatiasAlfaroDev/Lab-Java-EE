@@ -80,8 +80,19 @@ public class MensajeService {
             mensaje.getFechaEnviado()
         );
 
-        ChatWebSocket.broadcast(json);
-        }
+        List<Integer> usuarios =
+            chat.getMiembros()
+                .stream()
+                .map(m ->
+                    m.getUsuario().getId()
+                )
+                .toList();
+
+        ChatWebSocket.sendToUsers(
+            usuarios,
+            json
+        );
+    }
 
     public List<MensajeResponse> listar(int chatId, int userId) {
         

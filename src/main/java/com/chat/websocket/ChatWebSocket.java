@@ -1,81 +1,119 @@
 package com.chat.websocket;
 
+import com.chat.security.TokenService;
+
 import jakarta.websocket.*;
 import jakarta.websocket.server.ServerEndpoint;
+import jakarta.inject.Inject;
 
 import java.io.IOException;
-import java.util.Set;
-import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @ServerEndpoint("/ws/chat")
 public class ChatWebSocket {
 
-    private static final Set<Session> sessions =
-            new CopyOnWriteArraySet<>();
+    @Inject
+    private TokenService tokenService;
+
+    private static final Map<Integer, Session> sessions =
+        new ConcurrentHashMap<>();
 
     @OnOpen
     public void onOpen(Session session) {
 
-        sessions.add(session);
+        try {
 
-        System.out.println(
-                "WS conectado: " + session.getId()
-        );
+            String token =
+                session
+                    .getRequestParameterMap()
+                    .get("token")
+                    .get(0);
+
+            Long userId = new TokenService().validarToken(token);
+
+            sessions.put(
+                userId.intValue(),
+                session
+            );
+
+            System.out.println(
+                "WS conectado usuario: "
+                + userId
+            );
+
+        } catch (Exception e) {
+
+            try {
+                session.close();
+            } catch (IOException ignored) {}
+        }
     }
 
     @OnClose
     public void onClose(Session session) {
 
-        sessions.remove(session);
+        sessions.values().remove(session);
 
         System.out.println(
-                "WS cerrado: " + session.getId()
+            "WS cerrado: " + session.getId()
         );
     }
 
     @OnError
     public void onError(
-            Session session,
-            Throwable throwable
+        Session session,
+        Throwable throwable
     ) {
 
-        sessions.remove(session);
+        sessions.values().remove(session);
 
         System.out.println(
-                "WS error: " + throwable
+            "WS error: " + throwable
         );
 
         throwable.printStackTrace();
     }
 
-    public static void broadcast(String mensaje) {
+    @OnMessage
+    public void onMessage(String message) {
 
-        for (Session session : sessions) {
+        if ("ping".equals(message)) {
 
-            if (!session.isOpen()) {
-                sessions.remove(session);
-                continue;
-            }
+            System.out.println("PING");
+        }
+    }
 
-            try {
+    public static void sendToUsers(
+        List<Integer> usuarios,
+        String mensaje
+    ) {
 
-                session.getAsyncRemote()
-                        .sendText(mensaje);
+        for (Integer userId : usuarios) {
 
-            } catch (Exception e) {
+            Session session =
+                sessions.get(userId);
 
-                System.out.println(
-                        "Error enviando a session "
-                        + session.getId()
-                );
-
-                e.printStackTrace();
+            if (
+                session != null &&
+                session.isOpen()
+            ) {
 
                 try {
-                    session.close();
-                } catch (IOException ignored) {}
 
-                sessions.remove(session);
+                    session
+                        .getAsyncRemote()
+                        .sendText(mensaje);
+
+                } catch (Exception e) {
+
+                    try {
+                        session.close();
+                    } catch (IOException ignored) {}
+
+                    sessions.remove(userId);
+                }
             }
         }
     }
