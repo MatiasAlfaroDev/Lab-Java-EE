@@ -34,7 +34,6 @@ public class MiembroChat {
     @PrePersist
     protected void onCreate() {
         this.fechaUnido = LocalDateTime.now();
-        this.ultimoLeido = LocalDateTime.now();
     }
 
     public MiembroChat() {}

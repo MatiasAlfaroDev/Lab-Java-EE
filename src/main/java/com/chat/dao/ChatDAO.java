@@ -30,13 +30,19 @@ public class ChatDAO {
         """, Chat.class).getResultList();
     }
 
-    public List<Chat> obtenerChatsPorUsuario(int userId) {
+   public List<Chat> obtenerChatsPorUsuario(int userId) {
+
         return em.createQuery("""
             SELECT DISTINCT c
             FROM Chat c
-            JOIN FETCH c.miembros miembros
-            JOIN FETCH miembros.usuario
-            WHERE miembros.usuario.id = :userId
+            JOIN FETCH c.miembros
+            JOIN FETCH c.miembros.usuario
+            WHERE c.chatId IN (
+
+                SELECT mc.chat.chatId
+                FROM MiembroChat mc
+                WHERE mc.usuario.id = :userId
+            )
         """, Chat.class)
         .setParameter("userId", userId)
         .getResultList();
@@ -107,7 +113,7 @@ public class ChatDAO {
             SELECT m.contenido
             FROM Mensaje m
             WHERE m.chat.chatId = :chatId
-            ORDER BY m.fechaEnvio DESC
+            ORDER BY m.fechaEnviado DESC
         """, String.class)
         .setParameter("chatId", chatId)
         .setMaxResults(1)
