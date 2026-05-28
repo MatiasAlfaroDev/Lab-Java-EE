@@ -102,6 +102,9 @@ public class ChatController {
             return Response.ok(resultado).build();
 
         } catch (RuntimeException e) {
+
+            e.printStackTrace();
+
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity(e.getMessage())
                     .build();

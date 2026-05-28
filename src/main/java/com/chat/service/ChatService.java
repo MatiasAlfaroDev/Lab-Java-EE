@@ -186,16 +186,27 @@ public class ChatService {
 
             int unread = 0;
 
-            if (
-                miembro != null &&
-                miembro.getUltimoLeido() != null
-            ) {
+            if (miembro != null) {
 
-                unread = mensajeDAO.contarNoLeidos(
-                    chat.getChatId(),
-                    userId.intValue(),
-                    miembro.getUltimoLeido()
-                ).intValue();
+                if (miembro.getUltimoLeido() == null) {
+
+                    unread = mensajeDAO
+                        .contarTodos(
+                            chat.getChatId(),
+                            userId.intValue()
+                        )
+                        .intValue();
+
+                } else {
+
+                    unread = mensajeDAO
+                        .contarNoLeidos(
+                            chat.getChatId(),
+                            userId.intValue(),
+                            miembro.getUltimoLeido()
+                        )
+                        .intValue();
+                }
             }
 
             return new ChatDTO(
@@ -309,18 +320,19 @@ public class ChatService {
 
         if (chat.getTipo() == TipoChat.PRIVADO) {
 
-            List<MiembroChat> miembros = chat.getMiembros();
-
-            if (miembros.size() == 1) {
-                return miembros.get(0).getUsuario().getNombre();
-            }
+            List<MiembroChat> miembros =
+                chat.getMiembros();
 
             return miembros.stream()
-                .filter(m -> m.getUsuario().getId() != usuarioActualId)
+                .filter(m ->
+                    m.getUsuario().getId()
+                    != usuarioActualId
+                )
+                .map(m ->
+                    m.getUsuario().getNombre()
+                )
                 .findFirst()
-                .get()
-                .getUsuario()
-                .getNombre();
+                .orElse(chat.getNombre());
         }
 
         return chat.getNombre();
