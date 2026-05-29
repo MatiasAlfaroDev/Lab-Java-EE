@@ -12,6 +12,7 @@
         <class>com.chat.model.Chat</class>
         <class>com.chat.model.MiembroChat</class>
         <class>com.chat.model.Mensaje</class>
+        <class>com.chat.model.MensajeUsuario</class>
 
         <exclude-unlisted-classes>true</exclude-unlisted-classes>
 

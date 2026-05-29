@@ -28,7 +28,7 @@ public class MensajeUsuario {
     @Column(name = "fecha_eliminado")
     private LocalDateTime fechaEliminado;   
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private boolean eliminado;
 
 

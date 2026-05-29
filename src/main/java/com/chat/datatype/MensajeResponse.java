@@ -10,5 +10,7 @@ public class MensajeResponse {
     public String contenido;
     public String sent_at;
     public String estado;
+    public boolean entregado;
+    public boolean leido;
 
 }

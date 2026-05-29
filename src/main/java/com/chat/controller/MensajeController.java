@@ -159,5 +159,86 @@ public class MensajeController {
         }
     }
 
+    @POST
+    @Path("/{mensajeId}/entregado")
+    public Response marcarEntregado(@PathParam("mensajeId") int mensajeId, @HeaderParam("Authorization") String token) {
+        try {
+            if (token == null || token.isBlank()) {
+                return Response.status(Response.Status.UNAUTHORIZED)
+                .entity("Falta token")
+                .build();
+            }
+
+            Long userId = tokenService.validarToken(token);
+            mensajeService.marcarEntregado(mensajeId, userId.intValue());
+
+            return Response.ok().build();
+
+        } catch (Exception e) {
+            return Response.status(
+                Response.Status.BAD_REQUEST
+            )
+            .entity(e.getMessage())
+            .build();
+        }
+    }
+
+    @POST
+    @Path("/{chatId}/leido")
+    public Response marcarLeido(@PathParam("chatId") int chatId, @HeaderParam("Authorization") String token) {
+        try {
+            if (token == null || token.isBlank()) {
+                return Response.status(Response.Status.UNAUTHORIZED)
+                .entity("Falta token")
+                .build();
+            }
+
+            Long userId = tokenService.validarToken(token);
+            mensajeService.marcarLeido(chatId, userId.intValue());
+
+            return Response.ok().build();
+
+        } catch (Exception e) {
+
+            return Response.status(
+                Response.Status.BAD_REQUEST
+            )
+            .entity(e.getMessage())
+            .build();
+        }
+    }
+
+    @GET
+    @Path("/{mensajeId}/entregado")
+    public Response fueEntregado(@PathParam("mensajeId") int mensajeId) {
+        try {
+            boolean entregado = mensajeService.fueEntregado(mensajeId);
+            return Response.ok(entregado).build();
+
+        } catch (Exception e) {
+            return Response.status(
+                Response.Status.BAD_REQUEST
+            )
+            .entity(e.getMessage())
+            .build();
+        }
+    }
+
+    @GET
+    @Path("/{mensajeId}/leido")
+    public Response fueLeido(@PathParam("mensajeId") int mensajeId) {
+        try {
+            boolean leido = mensajeService.fueLeido(mensajeId);
+            return Response.ok(leido).build();
+
+        } catch (Exception e) {
+            return Response.status(
+                Response.Status.BAD_REQUEST
+            )
+            .entity(e.getMessage())
+            .build();
+        }
+    }
 
 }
+

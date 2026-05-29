@@ -3,6 +3,7 @@ package com.chat.service;
 import com.chat.dao.MensajeDAO;
 import com.chat.dao.ChatDAO;
 import com.chat.dao.UsuarioDAO;
+import com.chat.dao.MensajeUsuarioDAO;
 import com.chat.datatype.MensajeResponse;
 import com.chat.model.*;
 import com.chat.enums.TipoMensaje;
@@ -11,6 +12,8 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import com.chat.websocket.ChatWebSocket;
+
+import java.time.LocalDateTime;
 import java.util.List;
 
 @ApplicationScoped
@@ -18,12 +21,12 @@ public class MensajeService {
 
     @Inject
     private MensajeDAO mensajeDAO;
-
     @Inject
     private ChatDAO chatDAO;
-
     @Inject
     private UsuarioDAO usuarioDAO;
+    @Inject
+    private MensajeUsuarioDAO mensajeUsuarioDAO;
 
     @Transactional
     public void enviarMensaje(int chatId, int userId, String contenido, TipoMensaje tipo) {
@@ -55,6 +58,23 @@ public class MensajeService {
 
         // 3. guardar
         mensajeDAO.guardar(mensaje);
+
+        // 4. crear registros en MensajeUsuario para cada receptor
+        for (MiembroChat miembro : chat.getMiembros()) {
+            Usuario receptor = miembro.getUsuario();
+
+            if (receptor.getId() == usuario.getId()) {
+                continue;
+            }
+
+            MensajeUsuario mu = new MensajeUsuario();
+
+            mu.setMensaje(mensaje);
+            mu.setReceptor(receptor);
+            mu.setEliminado(false); 
+
+            mensajeUsuarioDAO.guardar(mu);
+        }
 
         // 4. enviar por WebSocket
         String contenidoSeguro = contenido
@@ -120,6 +140,8 @@ public class MensajeService {
                 m.getFechaEnviado().toString();
             dto.estado =
                 m.getEstado().toString();
+            dto.entregado = Boolean.TRUE.equals(fueEntregado(m.getId()));
+            dto.leido = Boolean.TRUE.equals(fueLeido(m.getId()));
             return dto;
         }).toList();
     }
@@ -153,4 +175,63 @@ public class MensajeService {
         }
     }
 
+    public boolean fueEntregado(int mensajeId) {
+        List<MensajeUsuario> lista =
+            mensajeUsuarioDAO.listarPorMensaje(mensajeId);
+
+        if (lista.isEmpty()) {
+            return false;
+        }
+
+        return lista.stream()
+            .allMatch(mu ->
+                mu.getFechaEntregado() != null
+            );
+    }
+
+    public boolean fueLeido(int mensajeId) {
+        List<MensajeUsuario> lista =
+            mensajeUsuarioDAO.listarPorMensaje(mensajeId);
+
+        if (lista.isEmpty()) {
+            return false;
+        }
+
+        return lista.stream()
+            .allMatch(mu ->
+                mu.getFechaLeido() != null
+            );
+    }
+
+    @Transactional
+    public void marcarEntregado(int mensajeId, int usuarioId) {
+        MensajeUsuario mu =
+            mensajeUsuarioDAO.buscarPorMensajeYUsuario(
+                mensajeId,
+                usuarioId
+            );
+
+        if (mu != null && mu.getFechaEntregado() == null) {
+
+            mu.setFechaEntregado(LocalDateTime.now());
+            mensajeUsuarioDAO.update(mu); 
+        }
+    }
+
+    @Transactional
+    public void marcarLeido(int chatId, int usuarioId) {
+
+        List<MensajeUsuario> lista =
+            mensajeUsuarioDAO.findNoLeidos(chatId, usuarioId);
+
+        for (MensajeUsuario mu : lista) {
+
+            if (mu.getFechaEntregado() == null) {
+                mu.setFechaEntregado(LocalDateTime.now());
+            }
+
+            mu.setFechaLeido(LocalDateTime.now());
+            mensajeUsuarioDAO.update(mu);
+        }
+    }
 }
