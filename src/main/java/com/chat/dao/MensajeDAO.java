@@ -75,4 +75,7 @@ public class MensajeDAO {
         .getSingleResult();
     }
     
+    public Mensaje buscarPorId(int mensajeId) {
+        return em.find(Mensaje.class, mensajeId);
+    }
 }

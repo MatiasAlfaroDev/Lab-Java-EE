@@ -205,6 +205,7 @@ public class MensajeService {
 
     @Transactional
     public void marcarEntregado(int mensajeId, int usuarioId) {
+
         MensajeUsuario mu =
             mensajeUsuarioDAO.buscarPorMensajeYUsuario(
                 mensajeId,
@@ -214,15 +215,42 @@ public class MensajeService {
         if (mu != null && mu.getFechaEntregado() == null) {
 
             mu.setFechaEntregado(LocalDateTime.now());
-            mensajeUsuarioDAO.update(mu); 
+            mensajeUsuarioDAO.update(mu);
+
+            if (fueEntregado(mensajeId)) {
+
+                Mensaje mensaje =
+                    mensajeDAO.buscarPorId(mensajeId);
+
+                int emisorId =
+                    mensaje.getEmisor().getId();
+
+                String json = String.format(
+                    """
+                    {
+                        "type":"message_delivered",
+                        "messageId":"%d"
+                    }
+                    """,
+                    mensajeId
+                );
+
+                ChatWebSocket.sendToUsers(
+                    List.of(emisorId),
+                    json
+                );
+            }
         }
     }
 
-    @Transactional
+   @Transactional
     public void marcarLeido(int chatId, int usuarioId) {
 
         List<MensajeUsuario> lista =
-            mensajeUsuarioDAO.findNoLeidos(chatId, usuarioId);
+            mensajeUsuarioDAO.findNoLeidos(
+                chatId,
+                usuarioId
+            );
 
         for (MensajeUsuario mu : lista) {
 
@@ -232,6 +260,33 @@ public class MensajeService {
 
             mu.setFechaLeido(LocalDateTime.now());
             mensajeUsuarioDAO.update(mu);
+
+            int mensajeId =
+                mu.getMensaje().getId();
+
+            if (fueLeido(mensajeId)) {
+
+                Mensaje mensaje =
+                    mu.getMensaje();
+
+                int emisorId =
+                    mensaje.getEmisor().getId();
+
+                String json = String.format(
+                    """
+                    {
+                        "type":"message_read",
+                        "messageId":"%d"
+                    }
+                    """,
+                    mensajeId
+                );
+
+                ChatWebSocket.sendToUsers(
+                    List.of(emisorId),
+                    json
+                );
+            }
         }
     }
 }
