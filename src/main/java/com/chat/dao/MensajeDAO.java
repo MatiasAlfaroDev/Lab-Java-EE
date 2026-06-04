@@ -78,4 +78,18 @@ public class MensajeDAO {
     public Mensaje buscarPorId(int mensajeId) {
         return em.find(Mensaje.class, mensajeId);
     }
+
+    public void update(Mensaje mensaje) {
+        em.merge(mensaje);
+    }
+
+    public List<Integer> findUsuariosByChatId(int chatId) {
+
+        return em.createQuery(
+            "SELECT m.usuario.id FROM MiembroChat m WHERE m.chat.id = :chatId",
+            Integer.class
+        )
+        .setParameter("chatId", chatId)
+        .getResultList();
+    }
 }

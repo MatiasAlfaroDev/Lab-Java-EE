@@ -4,5 +4,6 @@ public enum TipoMensaje {
     TEXTO,
     IMAGEN,
     VIDEO,
-    ARCHIVO
+    ARCHIVO,
+    ENCUESTA
 }

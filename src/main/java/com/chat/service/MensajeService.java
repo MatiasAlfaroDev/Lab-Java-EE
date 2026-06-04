@@ -289,4 +289,58 @@ public class MensajeService {
             }
         }
     }
+
+    @Transactional
+    public Mensaje editarMensaje(int mensajeId, int usuarioId, String nuevoContenido) {
+
+        Mensaje mensaje = mensajeDAO.buscarPorId(mensajeId);
+
+        if (mensaje == null) {
+            throw new RuntimeException("Mensaje no existe");
+        }
+
+        if (mensaje.getEmisor().getId() != usuarioId) {
+            throw new RuntimeException("No tienes permiso");
+        }
+
+        if (mensaje.getTipo() != TipoMensaje.TEXTO) {
+            throw new RuntimeException("Solo texto");
+        }
+
+        mensaje.setContenido(nuevoContenido);
+        mensaje.setEditado(true);
+
+        mensajeDAO.update(mensaje);
+
+        String contenidoSeguro = nuevoContenido
+            .replace("\"", "\\\"")
+            .replace("\n", " ");
+
+        String json = String.format(
+            """
+            {
+                "type":"message_edited",
+                "messageId":"%d",
+                "chatId":"%d",
+                "contenido":"%s",
+                "editado":true
+            }
+            """,
+            mensaje.getId(),
+            mensaje.getChat().getChatId(),
+            contenidoSeguro
+        );
+
+        List<Integer> usuarios =
+            mensaje.getChat()
+                .getMiembros()
+                .stream()
+                .map(m -> m.getUsuario().getId())
+                .toList();
+
+        ChatWebSocket.sendToUsers(usuarios, json);
+
+        return null;
+    }
+    
 }

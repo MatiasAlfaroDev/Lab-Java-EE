@@ -4,7 +4,8 @@ import com.chat.service.MensajeService;
 import com.chat.datatype.EnviarMensajeRequest;
 import com.chat.security.TokenService;
 import com.chat.enums.TipoMensaje;
-
+import com.chat.model.Mensaje;
+import com.chat.datatype.EditarMensajeRequest;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -240,5 +241,23 @@ public class MensajeController {
         }
     }
 
+    @PUT
+    @Path("/{id}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response editarMensaje(@PathParam("id") int mensajeId,
+                                EditarMensajeRequest req,
+                                @HeaderParam("Authorization") String token) {
+
+        Long usuarioId = tokenService.validarToken(token);
+
+        Mensaje mensaje = mensajeService.editarMensaje(
+            mensajeId,
+            usuarioId.intValue(),
+            req.getContenido()
+        );
+
+        return Response.ok(mensaje).build();
+    }
 }
 
