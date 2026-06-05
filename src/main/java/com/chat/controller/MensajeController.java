@@ -278,5 +278,24 @@ public class MensajeController {
 
         return Response.ok().build();
     }
+
+    @PUT
+    @Path("/{id}/eliminar-para-todos")  
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response eliminarParaTodos(
+        @PathParam("id") int mensajeId,
+        @HeaderParam("Authorization") String token
+    ) {
+
+        Long usuarioId =
+            tokenService.validarToken(token);
+
+        mensajeService.eliminarParaTodos(
+            mensajeId,
+            usuarioId.intValue()
+        );
+
+        return Response.ok().build();
+    }
 }
 

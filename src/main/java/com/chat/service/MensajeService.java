@@ -139,6 +139,7 @@ public class MensajeService {
             dto.entregado = Boolean.TRUE.equals(fueEntregado(m.getId()));
             dto.leido = Boolean.TRUE.equals(fueLeido(m.getId()));
             dto.editado = m.isEditado();
+            dto.eliminado = m.isEliminado();
             return dto;
         }).toList();
     }
@@ -356,4 +357,44 @@ public class MensajeService {
         );
     }
     
+    @Transactional
+    public void eliminarParaTodos(int mensajeId, int usuarioId) {
+
+        Mensaje mensaje = mensajeDAO.buscarPorId(mensajeId);
+
+        if (mensaje == null) {
+            throw new RuntimeException("Mensaje no existe");
+        }
+
+        // solo el emisor puede eliminar para todos
+        if (mensaje.getEmisor().getId() != usuarioId) {
+            throw new RuntimeException("No tienes permiso");
+        }
+
+        mensaje.setEliminado(true);
+        mensajeDAO.update(mensaje);
+
+        // websocket para actualización en tiempo real
+        String json = String.format(
+            """
+            {
+                "type":"message_deleted",
+                "messageId":"%d",
+                "chatId":"%d",
+                "eliminado":true
+            }
+            """,
+            mensaje.getId(),
+            mensaje.getChat().getChatId()
+        );
+
+        List<Integer> usuarios =
+            mensaje.getChat()
+                .getMiembros()
+                .stream()
+                .map(m -> m.getUsuario().getId())
+                .toList();
+
+        ChatWebSocket.sendToUsers(usuarios, json);
+    }
 }

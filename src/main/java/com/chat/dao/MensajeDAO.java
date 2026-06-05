@@ -99,4 +99,5 @@ public class MensajeDAO {
         .setParameter("chatId", chatId)
         .getResultList();
     }
+
 }
