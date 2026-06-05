@@ -142,6 +142,7 @@ public class MensajeService {
                 m.getEstado().toString();
             dto.entregado = Boolean.TRUE.equals(fueEntregado(m.getId()));
             dto.leido = Boolean.TRUE.equals(fueLeido(m.getId()));
+            dto.editado = m.isEditado();
             return dto;
         }).toList();
     }

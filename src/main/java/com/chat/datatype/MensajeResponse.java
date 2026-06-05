@@ -12,5 +12,5 @@ public class MensajeResponse {
     public String estado;
     public boolean entregado;
     public boolean leido;
-
+    public boolean editado;
 }
