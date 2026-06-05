@@ -259,5 +259,24 @@ public class MensajeController {
 
         return Response.ok(mensaje).build();
     }
+
+    @PUT
+    @Path("/{id}/eliminar-para-mi")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response eliminarParaMi(
+        @PathParam("id") int mensajeId,
+        @HeaderParam("Authorization") String token
+    ) {
+
+        Long usuarioId =
+            tokenService.validarToken(token);
+
+        mensajeService.eliminarParaMi(
+            mensajeId,
+            usuarioId.intValue()
+        );
+
+        return Response.ok().build();
+    }
 }
 

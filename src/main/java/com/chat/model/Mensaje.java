@@ -48,10 +48,14 @@ public class Mensaje {
     @Column(nullable = false)
     private boolean editado;
 
+    @Column(nullable = false)
+    private boolean eliminado;
+
     @PrePersist
     protected void onCreate() {
         this.fechaEnviado = Instant.now();
         this.editado = false;
+        this.eliminado = false;
     }
 
 
@@ -71,6 +75,9 @@ public class Mensaje {
     public boolean isEditado() { return editado; }
     public void setEditado(boolean editado) { this.editado = editado; }
     
+    public boolean isEliminado() { return eliminado; }
+    public void setEliminado(boolean eliminado) { this.eliminado = eliminado; }
+
     public TipoMensaje getTipo() { return tipo; }
     public void setTipo(TipoMensaje tipo) { this.tipo = tipo; }
     

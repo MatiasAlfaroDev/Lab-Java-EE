@@ -5,6 +5,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
+import jakarta.transaction.Transactional;
 
 import java.util.List;
 
@@ -68,6 +69,7 @@ public class MensajeUsuarioDAO {
             SELECT mu
             FROM MensajeUsuario mu
             WHERE mu.mensaje.id = :mensajeId
+            AND mu.receptor.id <> mu.mensaje.emisor.id
         """, MensajeUsuario.class)
         .setParameter("mensajeId", mensajeId)
         .getResultList();   
@@ -75,5 +77,22 @@ public class MensajeUsuarioDAO {
 
     public void update(MensajeUsuario mu) {
         em.merge(mu);
+    }
+
+    @Transactional
+    public void eliminarParaUsuario(int mensajeId, int usuarioId) {
+
+        MensajeUsuario mu = em.createQuery("""
+            SELECT mu
+            FROM MensajeUsuario mu
+            WHERE mu.mensaje.id = :mensajeId
+            AND mu.receptor.id = :usuarioId
+        """, MensajeUsuario.class)
+        .setParameter("mensajeId", mensajeId)
+        .setParameter("usuarioId", usuarioId)
+        .getSingleResult();
+
+        mu.setEliminado(true);
+        mu.setFechaEliminado(java.time.LocalDateTime.now());
     }
 }

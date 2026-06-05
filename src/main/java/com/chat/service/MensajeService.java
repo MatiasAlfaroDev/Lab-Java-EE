@@ -63,10 +63,6 @@ public class MensajeService {
         for (MiembroChat miembro : chat.getMiembros()) {
             Usuario receptor = miembro.getUsuario();
 
-            if (receptor.getId() == usuario.getId()) {
-                continue;
-            }
-
             MensajeUsuario mu = new MensajeUsuario();
 
             mu.setMensaje(mensaje);
@@ -117,7 +113,7 @@ public class MensajeService {
     public List<MensajeResponse> listar(int chatId, int userId) {
         
         List<Mensaje> mensajes =
-            mensajeDAO.listarPorChat(chatId);
+            mensajeDAO.listarPorChat(chatId, userId);
 
         return mensajes.stream().map(m -> {
             MensajeResponse dto =
@@ -342,6 +338,22 @@ public class MensajeService {
         ChatWebSocket.sendToUsers(usuarios, json);
 
         return null;
+    }
+
+    @Transactional
+    public void eliminarParaMi(int mensajeId, int usuarioId) {
+
+        Mensaje mensaje =
+            mensajeDAO.buscarPorId(mensajeId);
+
+        if (mensaje == null) {
+            throw new RuntimeException("Mensaje no existe");
+        }
+
+        mensajeUsuarioDAO.eliminarParaUsuario(
+            mensajeId,
+            usuarioId
+        );
     }
     
 }

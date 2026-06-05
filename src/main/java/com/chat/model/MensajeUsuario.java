@@ -49,5 +49,8 @@ public class MensajeUsuario {
     public boolean isEliminado() {return eliminado;}
     public void setEliminado(boolean eliminado) {this.eliminado = eliminado;}
 
+    public LocalDateTime getFechaEliminado() {return fechaEliminado;}
+    public void setFechaEliminado(LocalDateTime fechaEliminado) {this.fechaEliminado = fechaEliminado;}
+
     
 }
