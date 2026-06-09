@@ -3,12 +3,12 @@ package com.chat.model;
 import com.chat.enums.EstadoMensaje;
 import com.chat.enums.TipoMensaje;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import jakarta.persistence.*;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 
 @Entity
 @Table(name = "mensaje")
@@ -55,6 +55,13 @@ public class Mensaje {
     @Column(nullable = false)
     private boolean eliminado;
 
+    @OneToMany(
+    mappedBy = "mensaje",
+    cascade = CascadeType.ALL,
+    orphanRemoval = true
+    )
+    private List<ReaccionMensaje> reacciones = new ArrayList<>();
+
     @PrePersist
     protected void onCreate() {
         this.fechaEnviado = Instant.now();
@@ -93,4 +100,10 @@ public class Mensaje {
 
     public Mensaje getMensajeOrigen() { return mensajeOrigen; }
     public void setMensajeOrigen(Mensaje mensajeOrigen) { this.mensajeOrigen = mensajeOrigen; }
+
+    public List<ReaccionMensaje> getReacciones() { return reacciones; }
+    public void setReacciones(List<ReaccionMensaje> reacciones) { this.reacciones = reacciones; }
+    public void addReaccion(ReaccionMensaje reaccion) { reacciones.add(reaccion); reaccion.setMensaje(this);}
+
+    public void removeReaccion(ReaccionMensaje reaccion) {reacciones.remove(reaccion);reaccion.setMensaje(null);}
 }
