@@ -14,4 +14,5 @@ public class MensajeResponse {
     public boolean leido;
     public boolean editado;
     public boolean eliminado;
+    public int mensajeOrigenId;
 }

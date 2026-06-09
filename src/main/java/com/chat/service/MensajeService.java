@@ -142,6 +142,7 @@ public class MensajeService {
             dto.leido = Boolean.TRUE.equals(fueLeido(m.getId()));
             dto.editado = m.isEditado();
             dto.eliminado = m.isEliminado();
+            dto.mensajeOrigenId = m.getMensajeOrigen() != null ? m.getMensajeOrigen().getId() : 0;
             return dto;
         }).toList();
     }
