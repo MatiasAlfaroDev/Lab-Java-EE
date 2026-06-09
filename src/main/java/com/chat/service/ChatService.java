@@ -173,9 +173,9 @@ public class ChatService {
                 userId.intValue()
             );
 
-        return chats.stream().map(chat -> {
+         return chats.stream().map(chat -> {
 
-            MiembroChat miembro =
+          /*  MiembroChat miembro =
                 chat.getMiembros().stream()
                     .filter(m ->
                         m.getUsuario().getId()
@@ -218,7 +218,30 @@ public class ChatService {
             );
 
         }).toList();
-    }
+    } */
+
+        int unread =
+            mensajeDAO.contarNoLeidos(
+                chat.getChatId(),
+                userId.intValue()
+            ).intValue();
+
+        return new ChatDTO(
+            chat.getChatId(),
+            obtenerNombre(
+                chat,
+                userId.intValue()
+            ),
+            obtenerUltimoMensaje(
+                chat.getChatId()
+            ),
+            "",
+            unread
+        );
+
+    }).toList();
+}
+
 
      @Transactional
     public void agregarMiembro(int chatId, int adminId, int usuarioAgregarId) {

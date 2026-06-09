@@ -63,16 +63,18 @@ public class MensajeService {
         for (MiembroChat miembro : chat.getMiembros()) {
             Usuario receptor = miembro.getUsuario();
 
-            MensajeUsuario mu = new MensajeUsuario();
+            if (receptor.getId() != usuario.getId()) {
+                MensajeUsuario mu = new MensajeUsuario();
 
-            mu.setMensaje(mensaje);
-            mu.setReceptor(receptor);
-            mu.setEliminado(false); 
+                mu.setMensaje(mensaje);
+                mu.setReceptor(receptor);
+                mu.setEliminado(false); 
 
-            mensajeUsuarioDAO.guardar(mu);
+                mensajeUsuarioDAO.guardar(mu);
+            }
         }
 
-        // 4. enviar por WebSocket
+        // 5. enviar por WebSocket
         String contenidoSeguro = contenido
             .replace("\"", "\\\"")
             .replace("\n", " ");
