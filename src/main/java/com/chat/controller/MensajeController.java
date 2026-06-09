@@ -297,5 +297,45 @@ public class MensajeController {
 
         return Response.ok().build();
     }
+
+    @POST
+    @Path("/{mensajeId}/reenviar")
+    public Response reenviarMensaje(
+            @PathParam("mensajeId") int mensajeId,
+            @HeaderParam("Authorization") String token,
+            EnviarMensajeRequest request
+    ) {
+        try {
+            if (token == null || token.isBlank()) {
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity("Falta token")
+                        .build();
+            }
+
+            Long userId = tokenService.validarToken(token);
+            if (request == null || request.getChatId() <= 0) {
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity("Chat inválido")
+                        .build();
+            }
+
+            mensajeService.reenviarMensaje(
+                    mensajeId,
+                    request.getChatId(),
+                    userId.intValue()
+            );
+
+            return Response.ok("Mensaje reenviado").build();
+        } catch (RuntimeException e) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(e.getMessage())
+                    .build();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("Error interno")
+                    .build();
+        }
+    }
 }
 

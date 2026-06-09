@@ -39,6 +39,10 @@ public class Mensaje {
     @JoinColumn(name = "mensaje_referencia_id")
     private Mensaje mensajeReferencia;
 
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "mensaje_origen_id")
+    private Mensaje mensajeOrigen;
+
     @Column(nullable = false, columnDefinition = "text")
     private String contenido;
 
@@ -83,4 +87,10 @@ public class Mensaje {
     
     public EstadoMensaje getEstado() { return estado; }
     public void setEstado(EstadoMensaje estado) { this.estado = estado; }
+
+    public Mensaje getMensajeReferencia() { return mensajeReferencia; }
+    public void setMensajeReferencia(Mensaje mensajeReferencia) { this.mensajeReferencia = mensajeReferencia; }
+
+    public Mensaje getMensajeOrigen() { return mensajeOrigen; }
+    public void setMensajeOrigen(Mensaje mensajeOrigen) { this.mensajeOrigen = mensajeOrigen; }
 }
