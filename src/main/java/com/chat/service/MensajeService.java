@@ -5,6 +5,7 @@ import com.chat.dao.ChatDAO;
 import com.chat.dao.UsuarioDAO;
 import com.chat.dao.MensajeUsuarioDAO;
 import com.chat.datatype.MensajeResponse;
+import com.chat.datatype.ReaccionDTO;
 import com.chat.model.*;
 import com.chat.enums.TipoMensaje;
 import com.chat.enums.EstadoMensaje;
@@ -140,6 +141,14 @@ public class MensajeService {
             dto.leido = Boolean.TRUE.equals(fueLeido(m.getId()));
             dto.editado = m.isEditado();
             dto.eliminado = m.isEliminado();
+            dto.reacciones = m.getReacciones().stream().map(r -> {
+            
+            ReaccionDTO dtoR = new ReaccionDTO();
+            dtoR.usuarioId = r.getUsuarioReaccion().getId();
+            dtoR.usuarioNombre = r.getUsuarioReaccion().getNombre();
+            dtoR.emoji = r.getEmojiString();
+            return dtoR;
+            }).toList();
             return dto;
         }).toList();
     }

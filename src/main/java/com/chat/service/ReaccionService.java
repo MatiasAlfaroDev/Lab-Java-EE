@@ -38,13 +38,17 @@ public class ReaccionService {
 
     try {
 
-        ReaccionWsEvent event =
-            new ReaccionWsEvent(
-                "MESSAGE_REACTION",
-                mensaje.getId(),
-                usuarioId,
-                emoji
-            );
+        Usuario usuario =
+    usuarioDAO.buscarPorId(usuarioId);
+
+ReaccionWsEvent event =
+    new ReaccionWsEvent(
+        "MESSAGE_REACTION",
+        mensaje.getId(),
+        usuarioId,
+        usuario.getNombre(),
+        emoji
+    );
 
         String json =
             mapper.writeValueAsString(event);
