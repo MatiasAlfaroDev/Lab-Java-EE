@@ -10,13 +10,20 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+
 import java.time.LocalDateTime;
 
-
-
-
 @Entity
-@Table(name = "reaccion_mensaje")
+@Table(name = "reaccion_mensaje",
+    uniqueConstraints = {
+        @UniqueConstraint(
+            columnNames = {
+                "mensaje",
+                "usuario_reaccion_id"
+            }
+        )
+    })
 public class ReaccionMensaje {
    
     @Id
@@ -24,8 +31,8 @@ public class ReaccionMensaje {
     private int reaccionId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "mensaje_referencia_id")
-    private Mensaje mensajeReferencia;
+    @JoinColumn(name = "mensaje")
+    private Mensaje mensaje;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "usuario_reaccion_id")   
@@ -43,8 +50,8 @@ public class ReaccionMensaje {
     }   
 
     public int getReaccionId() { return reaccionId; }
-    public Mensaje getMensajeReferencia() { return mensajeReferencia; }
-    public void setMensajeReferencia(Mensaje mensajeReferencia) { this.mensajeReferencia = mensajeReferencia; }
+    public Mensaje getMensaje() { return mensaje; }
+    public void setMensaje(Mensaje mensaje) { this.mensaje = mensaje; }
     public Usuario getUsuarioReaccion() { return usuarioReaccion; }
     public void setUsuarioReaccion(Usuario usuarioReaccion) { this.usuarioReaccion = usuarioReaccion; }
     public String getEmojiString() { return emojiString; }
