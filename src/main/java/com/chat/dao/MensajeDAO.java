@@ -44,6 +44,7 @@ public class MensajeDAO {
             FROM MensajeUsuario mu
             WHERE mu.mensaje.chat.chatId = :chatId
             AND mu.receptor.id = :usuarioId
+            AND mu.mensaje.emisor.id <> :usuarioId
             AND mu.fechaLeido IS NULL
             AND mu.eliminado = false
         """, Long.class)
