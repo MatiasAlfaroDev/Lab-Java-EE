@@ -399,4 +399,85 @@ public class MensajeService {
 
         ChatWebSocket.sendToUsers(usuarios, json);
     }
+
+    @Transactional
+    public void reenviarMensaje(int mensajeId, int chatId, int userId) {
+
+        // 1. validar datos
+        Mensaje original = mensajeDAO.buscarPorId(mensajeId);
+        Chat chat = chatDAO.buscarPorId(chatId);
+        Usuario usuario = usuarioDAO.buscarPorId(userId);
+
+        if (original == null || chat == null || usuario == null) {
+            throw new RuntimeException("Datos inválidos");
+        }
+
+        boolean pertenece = chat.getMiembros()
+                .stream()
+                .anyMatch(m -> m.getUsuario().getId() == userId);
+
+        if (!pertenece) {
+            throw new RuntimeException("No pertenece al chat");
+        }
+
+        // 2. crear mensaje nuevo
+        Mensaje mensaje = new Mensaje();
+        mensaje.setChat(chat);
+        mensaje.setEmisor(usuario);
+        mensaje.setContenido(original.getContenido());
+        mensaje.setTipo(original.getTipo());
+        mensaje.setEstado(EstadoMensaje.ENVIADO);
+
+        // 🔥 clave del forward
+        mensaje.setMensajeOrigen(original);
+
+        // 3. guardar
+        mensajeDAO.guardar(mensaje);
+
+        // 4. crear registros MensajeUsuario
+        for (MiembroChat miembro : chat.getMiembros()) {
+
+            MensajeUsuario mu = new MensajeUsuario();
+            mu.setMensaje(mensaje);
+            mu.setReceptor(miembro.getUsuario());
+            mu.setEliminado(false);
+
+            mensajeUsuarioDAO.guardar(mu);
+        }
+
+        // 5. websocket
+        String contenidoSeguro = mensaje.getContenido()
+            .replace("\"", "\\\"")
+            .replace("\n", " ");
+
+        String json = String.format(
+            """
+            {
+                "type":"message_forwarded",
+                "id":"%d",
+                "chatId":"%d",
+                "remitente":"%s",
+                "remitenteId":"%d",
+                "contenido":"%s",
+                "timestamp":"%s",
+                "originalMessageId":"%d"
+            }
+            """,
+            mensaje.getId(),
+            chat.getChatId(),
+            usuario.getNombre(),
+            usuario.getId(),
+            contenidoSeguro,
+            mensaje.getFechaEnviado(),
+            original.getId()
+        );
+
+        List<Integer> usuarios =
+            chat.getMiembros()
+                .stream()
+                .map(m -> m.getUsuario().getId())
+                .toList();
+
+        ChatWebSocket.sendToUsers(usuarios, json);
+    }
 }
