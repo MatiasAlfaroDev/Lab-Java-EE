@@ -1,5 +1,7 @@
 package com.chat.datatype;
 
+import java.util.List;
+
 public class MensajeResponse {
 
     public int id;
@@ -14,5 +16,6 @@ public class MensajeResponse {
     public boolean leido;
     public boolean editado;
     public boolean eliminado;
+    public List<ReaccionDTO> reacciones;
     public int mensajeOrigenId;
 }

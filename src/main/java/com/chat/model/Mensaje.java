@@ -58,7 +58,8 @@ public class Mensaje {
     @OneToMany(
     mappedBy = "mensaje",
     cascade = CascadeType.ALL,
-    orphanRemoval = true
+    orphanRemoval = true,
+    fetch = FetchType.EAGER 
     )
     private List<ReaccionMensaje> reacciones = new ArrayList<>();
 
