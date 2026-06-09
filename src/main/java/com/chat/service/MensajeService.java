@@ -63,7 +63,6 @@ public class MensajeService {
         for (MiembroChat miembro : chat.getMiembros()) {
             Usuario receptor = miembro.getUsuario();
 
-            if (receptor.getId() != usuario.getId()) {
                 MensajeUsuario mu = new MensajeUsuario();
 
                 mu.setMensaje(mensaje);
@@ -71,7 +70,6 @@ public class MensajeService {
                 mu.setEliminado(false); 
 
                 mensajeUsuarioDAO.guardar(mu);
-            }
         }
 
         // 5. enviar por WebSocket
