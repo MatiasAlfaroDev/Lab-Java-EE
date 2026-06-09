@@ -2,6 +2,7 @@ package com.chat.dao;
 
 import com.chat.enums.TipoChat;
 import com.chat.model.Chat;
+import com.chat.model.Mensaje;
 import com.chat.model.MiembroChat;
 import com.chat.model.MiembroChatId;
 
@@ -107,7 +108,7 @@ public class ChatDAO {
             : chats.get(0);
     }
 
-    public String obtenerUltimoMensaje(int chatId) {
+  /*  public String obtenerUltimoMensaje(int chatId) {
 
         List<String> mensajes = em.createQuery("""
             SELECT m.contenido
@@ -120,5 +121,28 @@ public class ChatDAO {
         .getResultList();
 
         return mensajes.isEmpty() ? "" : mensajes.get(0);
+    } */
+
+    public String obtenerUltimoMensaje(int chatId) {
+
+        List<Mensaje> mensajes = em.createQuery("""
+            SELECT m
+            FROM Mensaje m
+            WHERE m.chat.chatId = :chatId
+            ORDER BY m.fechaEnviado DESC
+        """, Mensaje.class)
+        .setParameter("chatId", chatId)
+        .setMaxResults(1)
+        .getResultList();
+
+        if (mensajes.isEmpty()) {
+            return "";
+        }
+
+        Mensaje ultimo = mensajes.get(0);
+
+        return ultimo.isEliminado()
+            ? "Mensaje eliminado"
+            : ultimo.getContenido();
     }
 }
