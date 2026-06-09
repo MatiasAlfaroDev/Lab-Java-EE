@@ -17,4 +17,5 @@ public class MensajeResponse {
     public boolean editado;
     public boolean eliminado;
     public List<ReaccionDTO> reacciones;
+    public int mensajeOrigenId;
 }

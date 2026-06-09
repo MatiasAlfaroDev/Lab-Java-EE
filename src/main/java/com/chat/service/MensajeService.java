@@ -149,6 +149,7 @@ public class MensajeService {
             dtoR.emoji = r.getEmojiString();
             return dtoR;
             }).toList();
+            dto.mensajeOrigenId = m.getMensajeOrigen() != null ? m.getMensajeOrigen().getId() : 0;
             return dto;
         }).toList();
     }
