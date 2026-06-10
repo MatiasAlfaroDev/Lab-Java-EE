@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terotalk</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@7/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons@7/dist/ionicons/ionicons.js"></script>
+</head>
+<body>
+
+    <!-- ═══════════ Login / Registro ═══════════ -->
+    <div id="vista-login" class="login-vista">
+        <div class="login-card">
+            <h1 class="login-logo">Terotalk</h1>
+            <p class="login-subtitle">Mensajería Empresarial Segura</p>
+
+            <div class="login-tabs">
+                <button id="tab-login" class="login-tab activo">Iniciar sesión</button>
+                <button id="tab-registro" class="login-tab">Registrarse</button>
+            </div>
+
+            <p class="form-error" id="auth-error"></p>
+
+            <form id="form-login" class="auth-form">
+                <label class="campo">
+                    <span class="campo-label">EMAIL</span>
+                    <input id="login-email" type="email" placeholder="usuario@empresa.com" autocomplete="email" required>
+                </label>
+                <label class="campo">
+                    <span class="campo-label">CONTRASEÑA</span>
+                    <input id="login-password" type="password" placeholder="••••••••" autocomplete="current-password" required>
+                </label>
+                <button type="submit" class="btn-primario btn-full">Iniciar sesión</button>
+                <button type="button" class="btn-ghost btn-full">Iniciar sesión con SSO</button>
+            </form>
+
+            <form id="form-registro" class="auth-form" hidden>
+                <label class="campo">
+                    <span class="campo-label">USUARIO</span>
+                    <input id="reg-nombre" type="text" placeholder="nombre.apellido" required>
+                </label>
+                <label class="campo">
+                    <span class="campo-label">EMAIL</span>
+                    <input id="reg-email" type="email" placeholder="usuario@empresa.com" autocomplete="email" required>
+                </label>
+                <label class="campo">
+                    <span class="campo-label">CONTRASEÑA</span>
+                    <input id="reg-password" type="password" placeholder="Mín. 8 chars, mayús., número, símbolo" autocomplete="new-password" required>
+                </label>
+                <label class="campo">
+                    <span class="campo-label">CONFIRMAR</span>
+                    <input id="reg-confirmar" type="password" placeholder="Repetir contraseña" autocomplete="new-password" required>
+                </label>
+                <button type="submit" class="btn-primario btn-full">Crear cuenta</button>
+            </form>
+
+            <p class="login-footer">Jakarta EE 10 · WildFly 31 · AES-256-GCM E2E</p>
+        </div>
+    </div>
+
+    <!-- ═══════════ Vista principal ═══════════ -->
+    <div id="vista-app" class="app" hidden>
+
+        <aside class="sidebar">
+            <header class="sidebar-header">
+                <h1 class="sidebar-logo">Terotalk</h1>
+                <button id="btn-perfil" class="btn-avatar" title="Perfil">
+                    <span class="avatar avatar-34" id="mi-avatar"></span>
+                    <span class="dot dot-online" id="mi-dot"></span>
+                </button>
+            </header>
+
+            <div class="search-pill">
+                <ion-icon name="search-outline"></ion-icon>
+                <input id="buscar-chat" type="text" placeholder="Buscar conversaciones…">
+            </div>
+
+            <p class="section-label">CHATS</p>
+
+            <ul id="lista-chats" class="lista-chats"></ul>
+
+            <div id="chats-vacio" class="chats-vacio" hidden>
+                <ion-icon name="chatbubble-outline"></ion-icon>
+                <p class="vacio-titulo">Sin conversaciones</p>
+                <p class="vacio-sub">Toca + para iniciar un chat</p>
+            </div>
+
+            <button id="btn-nuevo-chat" class="fab" title="Nuevo chat">
+                <ion-icon name="add-outline"></ion-icon>
+            </button>
+        </aside>
+
+        <main class="panel">
+            <div id="panel-vacio" class="panel-vacio">
+                <ion-icon name="chatbubbles-outline"></ion-icon>
+                <h2>Terotalk</h2>
+                <p>Seleccioná una conversación o creá una nueva.</p>
+            </div>
+
+            <div id="panel-chat" class="panel-chat" hidden>
+                <header class="chat-header">
+                    <button id="btn-volver" class="btn-icono" title="Volver">
+                        <ion-icon name="arrow-back-outline"></ion-icon>
+                    </button>
+                    <button id="chat-header-centro" class="chat-header-centro">
+                        <span class="avatar avatar-32" id="chat-avatar"></span>
+                        <span class="chat-header-info">
+                            <span class="chat-header-nombre" id="chat-nombre"></span>
+                            <span class="chat-header-estado" id="chat-estado">Desconectado</span>
+                        </span>
+                    </button>
+                    <button class="btn-icono" title="Llamada"><ion-icon name="call-outline"></ion-icon></button>
+                    <button class="btn-icono" title="Video"><ion-icon name="videocam-outline"></ion-icon></button>
+                    <button id="btn-grupo-info" class="btn-icono btn-icono-accent" title="Info del grupo">
+                        <ion-icon name="people-outline"></ion-icon>
+                    </button>
+                </header>
+
+                <div id="zona-mensajes" class="zona-mensajes"></div>
+
+                <div class="composer-wrap">
+                    <div id="emoji-picker" class="emoji-picker" hidden></div>
+
+                    <div id="barra-edicion" class="barra-edicion" hidden>
+                        <span>Editando mensaje</span>
+                        <button id="cancelar-edicion">Cancelar</button>
+                    </div>
+
+                    <div class="composer">
+                        <button id="btn-emoji" class="btn-icono" title="Emojis">
+                            <ion-icon name="add-circle-outline"></ion-icon>
+                        </button>
+                        <div class="input-pill">
+                            <input id="input-mensaje" type="text" placeholder="Mensaje" maxlength="4000" autocomplete="off">
+                        </div>
+                        <button class="btn-icono btn-camara" title="Cámara">
+                            <ion-icon name="camera-outline"></ion-icon>
+                        </button>
+                        <button id="btn-enviar" class="btn-enviar" title="Enviar">
+                            <ion-icon name="paper-plane-outline"></ion-icon>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ═══════════ Menú contextual de mensaje ═══════════ -->
+    <div id="menu-mensaje" class="overlay" hidden>
+        <div class="menu-box" id="menu-mensaje-box"></div>
+    </div>
+
+    <!-- ═══════════ Nuevo chat (menú) ═══════════ -->
+    <div id="modal-nuevo-chat" class="overlay" hidden>
+        <div class="pantalla">
+            <header class="pantalla-header">
+                <h2>Nuevo chat</h2>
+                <button class="btn-icono cerrar" data-overlay="modal-nuevo-chat"><ion-icon name="close-outline"></ion-icon></button>
+            </header>
+            <button class="opcion-card" id="opcion-privado">
+                <ion-icon name="person-outline"></ion-icon>
+                <span class="opcion-info">
+                    <span class="opcion-titulo">Chat privado</span>
+                    <span class="opcion-desc">Conversación entre dos usuarios</span>
+                </span>
+            </button>
+            <button class="opcion-card" id="opcion-grupo">
+                <ion-icon name="people-outline"></ion-icon>
+                <span class="opcion-info">
+                    <span class="opcion-titulo">Crear grupo</span>
+                    <span class="opcion-desc">Crear conversación grupal</span>
+                </span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ═══════════ Nuevo privado ═══════════ -->
+    <div id="modal-privado" class="overlay" hidden>
+        <div class="pantalla">
+            <header class="pantalla-header">
+                <h2>Chat privado</h2>
+                <button class="btn-icono cerrar" data-overlay="modal-privado"><ion-icon name="close-outline"></ion-icon></button>
+            </header>
+            <div class="search-pill">
+                <ion-icon name="search-outline"></ion-icon>
+                <input id="buscar-privado" type="text" placeholder="Buscar usuarios…">
+            </div>
+            <p class="form-error" id="privado-error"></p>
+            <ul id="lista-privado" class="lista-personas"></ul>
+        </div>
+    </div>
+
+    <!-- ═══════════ Nuevo grupo ═══════════ -->
+    <div id="modal-grupo" class="overlay" hidden>
+        <div class="pantalla">
+            <header class="pantalla-header">
+                <h2>Crear grupo</h2>
+                <button class="btn-icono cerrar" data-overlay="modal-grupo"><ion-icon name="close-outline"></ion-icon></button>
+            </header>
+            <label class="campo">
+                <span class="campo-label">NOMBRE DEL GRUPO</span>
+                <input id="grupo-nombre" type="text" placeholder="Ej: Equipo Backend">
+            </label>
+            <div class="search-pill">
+                <ion-icon name="search-outline"></ion-icon>
+                <input id="buscar-grupo" type="text" placeholder="Buscar usuarios…">
+            </div>
+            <p class="form-error" id="grupo-error"></p>
+            <ul id="lista-grupo" class="lista-personas"></ul>
+            <button id="btn-crear-grupo" class="btn-primario btn-full">Crear grupo</button>
+        </div>
+    </div>
+
+    <!-- ═══════════ Perfil ═══════════ -->
+    <div id="modal-perfil" class="overlay" hidden>
+        <div class="pantalla">
+            <header class="pantalla-header">
+                <h2>Perfil</h2>
+                <button class="btn-icono cerrar" data-overlay="modal-perfil"><ion-icon name="close-outline"></ion-icon></button>
+            </header>
+
+            <div class="perfil-top">
+                <span class="avatar avatar-72" id="perfil-avatar"></span>
+                <p class="perfil-nombre" id="perfil-nombre"></p>
+                <p class="perfil-email" id="perfil-email"></p>
+                <span class="tag" id="perfil-rol"></span>
+            </div>
+
+            <div class="card">
+                <p class="section-label">INFORMACIÓN</p>
+                <div class="fila">
+                    <ion-icon name="person-outline"></ion-icon>
+                    <span class="fila-label">Usuario</span>
+                    <span class="fila-valor" id="info-usuario"></span>
+                </div>
+                <div class="fila">
+                    <ion-icon name="mail-outline"></ion-icon>
+                    <span class="fila-label">Email</span>
+                    <span class="fila-valor" id="info-email"></span>
+                </div>
+                <div class="fila fila-ultima">
+                    <ion-icon name="pulse-outline"></ion-icon>
+                    <span class="fila-label">Estado</span>
+                    <span class="fila-valor" id="info-estado"></span>
+                </div>
+            </div>
+
+            <div class="card">
+                <p class="section-label">SEGURIDAD</p>
+                <div class="fila fila-ultima">
+                    <ion-icon name="shield-outline"></ion-icon>
+                    <span class="fila-label">Reconfigurar MFA</span>
+                    <ion-icon name="chevron-forward-outline"></ion-icon>
+                </div>
+            </div>
+
+            <button id="btn-logout" class="btn-peligro btn-full">
+                <ion-icon name="log-out-outline"></ion-icon> Cerrar sesión
+            </button>
+        </div>
+    </div>
+
+    <!-- ═══════════ Info del grupo ═══════════ -->
+    <div id="modal-grupo-info" class="overlay" hidden>
+        <div class="pantalla">
+            <header class="pantalla-header">
+                <h2>Info del chat</h2>
+                <button class="btn-icono cerrar" data-overlay="modal-grupo-info"><ion-icon name="close-outline"></ion-icon></button>
+            </header>
+
+            <div class="perfil-top">
+                <span class="avatar avatar-72" id="ginfo-avatar"></span>
+                <div class="ginfo-nombre-fila">
+                    <p class="perfil-nombre" id="ginfo-nombre"></p>
+                    <button id="btn-renombrar" class="btn-icono" title="Renombrar">
+                        <ion-icon name="pencil-outline"></ion-icon>
+                    </button>
+                </div>
+            </div>
+
+            <div id="ginfo-editar" class="ginfo-editar" hidden>
+                <input id="ginfo-nuevo-nombre" type="text" maxlength="60">
+                <button id="btn-guardar-nombre" class="btn-primario">Guardar</button>
+            </div>
+
+            <p class="form-error" id="ginfo-error"></p>
+
+            <div class="card">
+                <div class="card-header-fila">
+                    <p class="section-label">PARTICIPANTES</p>
+                    <button id="btn-agregar-participante" class="link-accent">
+                        <ion-icon name="person-add-outline"></ion-icon> Agregar
+                    </button>
+                </div>
+                <ul id="ginfo-miembros" class="lista-personas"></ul>
+            </div>
+
+            <button id="btn-salir-grupo" class="btn-peligro btn-full">
+                <ion-icon name="exit-outline"></ion-icon> Salir del grupo
+            </button>
+        </div>
+    </div>
+
+    <!-- ═══════════ Agregar participante ═══════════ -->
+    <div id="modal-agregar" class="overlay" hidden>
+        <div class="pantalla">
+            <header class="pantalla-header">
+                <h2>Agregar participante</h2>
+                <button class="btn-icono cerrar" data-overlay="modal-agregar"><ion-icon name="close-outline"></ion-icon></button>
+            </header>
+            <div class="search-pill">
+                <ion-icon name="search-outline"></ion-icon>
+                <input id="buscar-agregar" type="text" placeholder="Buscar usuarios…">
+            </div>
+            <p class="form-error" id="agregar-error"></p>
+            <ul id="lista-agregar" class="lista-personas"></ul>
+        </div>
+    </div>
+
+    <!-- ═══════════ Reenviar ═══════════ -->
+    <div id="modal-reenviar" class="overlay" hidden>
+        <div class="pantalla">
+            <header class="pantalla-header">
+                <h2>Reenviar a…</h2>
+                <button class="btn-icono cerrar" data-overlay="modal-reenviar"><ion-icon name="close-outline"></ion-icon></button>
+            </header>
+            <p class="form-error" id="reenviar-error"></p>
+            <ul id="lista-reenviar" class="lista-personas"></ul>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>

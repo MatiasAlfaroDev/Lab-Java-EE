@@ -30,6 +30,20 @@ El sistema está desarrollado sobre **Jakarta EE 10** desplegado en **WildFly 31
 - Garantizar trazabilidad y cumplimiento normativo mediante logs de auditoría.
 - Facilitar la integración con sistemas externos mediante webhooks y eventos JMS.
 
+### Cómo ejecutar la app web
+
+El cliente web (estilo WhatsApp Web) vive en `src/main/webapp` y se sirve desde el mismo WAR — no requiere build de frontend.
+
+```bash
+# 1. Levantar la infraestructura (PostgreSQL, etc.)
+docker compose -f docker/docker-compose.yml up -d
+
+# 2. Compilar y desplegar en WildFly
+mvn package wildfly:deploy
+```
+
+Luego abrir **http://localhost:8080/chat-empresarial/** en el navegador. Registrarse, iniciar sesión y chatear; los mensajes llegan en tiempo real vía WebSocket (`/ws/chat`).
+
 ---
 
 ## 2. Arquitectura del Sistema

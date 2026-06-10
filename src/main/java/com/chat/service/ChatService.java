@@ -3,6 +3,7 @@ package com.chat.service;
 import com.chat.dao.ChatDAO;
 import com.chat.dao.UsuarioDAO;
 import com.chat.datatype.ChatDTO;
+import com.chat.datatype.MiembroChatDTO;
 import com.chat.dao.MensajeDAO;
 import com.chat.model.*;
 import com.chat.enums.ChatRol;
@@ -337,6 +338,49 @@ public class ChatService {
     }
         // eliminar
         chatDAO.eliminarMiembro(chatId, usuarioEliminarId);
+    }
+
+    public List<MiembroChatDTO> listarMiembros(int chatId, int userId) {
+
+        Chat chat = chatDAO.buscarPorId(chatId);
+        if (chat == null) {
+            throw new RuntimeException("El chat no existe");
+        }
+
+        MiembroChat solicitante = chatDAO.buscarMiembro(chatId, userId);
+        if (solicitante == null) {
+            throw new RuntimeException("No perteneces al chat");
+        }
+
+        return chatDAO.obtenerMiembros(chatId).stream()
+            .map(m -> new MiembroChatDTO(
+                m.getUsuario().getId(),
+                m.getUsuario().getNombre(),
+                m.getUsuario().getEmail(),
+                m.getChatRol() != null ? m.getChatRol().name() : ChatRol.MIEMBRO.name()
+            ))
+            .toList();
+    }
+
+    @Transactional
+    public void renombrarChat(int chatId, int userId, String nuevoNombre) {
+
+        Chat chat = chatDAO.buscarPorId(chatId);
+        if (chat == null) {
+            throw new RuntimeException("El chat no existe");
+        }
+
+        if (chat.getTipo() != TipoChat.GRUPO) {
+            throw new RuntimeException("Solo se pueden renombrar chats grupales");
+        }
+
+        MiembroChat miembro = chatDAO.buscarMiembro(chatId, userId);
+        if (miembro == null) {
+            throw new RuntimeException("No perteneces al chat");
+        }
+
+        chat.setNombre(nuevoNombre);
+        em.merge(chat);
     }
 
     private String obtenerNombre(Chat chat, int usuarioActualId) {

@@ -117,6 +117,80 @@ public class ChatController {
         }
     }
 
+    @GET
+    @Path("/{chatId}/miembros")
+    public Response listarMiembros(
+        @PathParam("chatId") int chatId,
+        @HeaderParam("Authorization") String token
+    ) {
+        try {
+            if (token == null || token.isBlank()) {
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity("Falta token")
+                        .build();
+            }
+
+            Long userId = tokenService.validarToken(token);
+
+            return Response.ok(
+                chatService.listarMiembros(chatId, userId.intValue())
+            ).build();
+
+        } catch (RuntimeException e) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(e.getMessage())
+                    .build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .entity("Token inválido")
+                    .build();
+        }
+    }
+
+    @PATCH
+    @Path("/{chatId}")
+    public Response renombrarChat(
+        @PathParam("chatId") int chatId,
+        CrearChatRequest request,
+        @HeaderParam("Authorization") String token
+    ) {
+        try {
+            if (token == null || token.isBlank()) {
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity("Falta token")
+                        .build();
+            }
+
+            Long userId = tokenService.validarToken(token);
+
+            if (request == null ||
+                request.getNombre() == null ||
+                request.getNombre().isBlank()) {
+
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity("Nombre inválido")
+                        .build();
+            }
+
+            chatService.renombrarChat(
+                chatId,
+                userId.intValue(),
+                request.getNombre().trim()
+            );
+
+            return Response.ok("Chat renombrado").build();
+
+        } catch (RuntimeException e) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(e.getMessage())
+                    .build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .entity("Token inválido")
+                    .build();
+        }
+    }
+
     @POST
     @Path("/agregar-miembro")
     public Response agregarMiembro(
