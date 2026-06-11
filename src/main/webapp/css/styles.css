@@ -495,7 +495,7 @@ ion-icon { font-size: 20px; flex-shrink: 0; }
 .bubble-mio .bubble-meta .editado { color: rgba(212,226,244,.65); }
 .bubble-meta ion-icon { font-size: 13px; color: var(--text-muted); }
 .bubble-mio .bubble-meta ion-icon { color: rgba(212,226,244,.65); }
-.bubble-meta ion-icon.leido { color: #8FBAFF; }
+.bubble-meta ion-icon.leido { color: #06692e; }
 
 .reacciones { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
 .reaccion-chip {

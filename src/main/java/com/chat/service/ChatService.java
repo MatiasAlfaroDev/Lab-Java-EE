@@ -237,6 +237,10 @@ public class ChatService {
                 chat.getChatId()
             ),
             "",
+            obtenerEstado(
+                chat,
+                userId.intValue()
+            ),
             unread
         );
 
@@ -405,5 +409,24 @@ public class ChatService {
         return chat.getNombre();
     }
 
+
+    private String obtenerEstado(Chat chat, int usuarioActualId) {
+
+        if (chat.getTipo() == TipoChat.PRIVADO) {
+
+            return chat.getMiembros().stream()
+                .filter(m ->
+                    m.getUsuario().getId()
+                    != usuarioActualId
+                )
+                .map(m ->
+                    m.getUsuario().getEstado().name()
+                )
+                .findFirst()
+                .orElse("OFFLINE");
+        }
+
+        return null;
+    }
 
 }

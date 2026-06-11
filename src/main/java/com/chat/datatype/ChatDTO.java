@@ -7,7 +7,7 @@ public class ChatDTO {
 
     private String lastMsg;
     private String lastMsgTime;
-
+    private String estado;
     private int unread;
 
     public ChatDTO(
@@ -15,6 +15,7 @@ public class ChatDTO {
         String nombre,
         String lastMsg,
         String lastMsgTime,
+        String estado,
         int unread
     ) {
 
@@ -22,6 +23,7 @@ public class ChatDTO {
         this.nombre = nombre;
         this.lastMsg = lastMsg;
         this.lastMsgTime = lastMsgTime;
+        this.estado = estado;
         this.unread = unread;
     }
 
@@ -31,6 +33,10 @@ public class ChatDTO {
 
     public String getNombre() {
         return nombre;
+    }
+
+    public String getEstado() {
+        return estado;
     }
 
     public String getLastMsg() {

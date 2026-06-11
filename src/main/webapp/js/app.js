@@ -171,9 +171,6 @@
     function setOnline(online) {
         state.online = online;
         $("#mi-dot").className = "dot " + (online ? "dot-online" : "dot-offline");
-        const estado = $("#chat-estado");
-        estado.textContent = online ? "En línea" : "Desconectado";
-        estado.classList.toggle("online", online);
     }
 
     async function manejarEventoWs(data) {
@@ -292,6 +289,28 @@
 
         const nombre = chat.nombre || "Chat";
         $("#chat-nombre").textContent = nombre;
+        
+        const estado = $("#chat-estado");
+
+            if (chat.estado == null) {
+
+                estado.textContent = "";
+
+                estado.classList.remove("online");
+
+            } else if (chat.estado === "ONLINE") {
+
+                estado.textContent = "En línea";
+
+                estado.classList.add("online");
+
+            } else {
+
+                estado.textContent = "Desconectado";
+
+                estado.classList.remove("online");
+            }
+
         setAvatar($("#chat-avatar"), nombre, nombre.slice(0, 2).toUpperCase());
 
         await cargarMensajes(chat.id);
