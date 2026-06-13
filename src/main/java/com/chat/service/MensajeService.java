@@ -13,6 +13,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import com.chat.websocket.ChatWebSocket;
+import com.chat.datatype.PushTokenDTO;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -28,6 +29,8 @@ public class MensajeService {
     private UsuarioDAO usuarioDAO;
     @Inject
     private MensajeUsuarioDAO mensajeUsuarioDAO;
+    @Inject
+    private PushNotificationService pushNotificationService;
 
     @Transactional
     public void enviarMensaje(int chatId, int userId, String contenido, TipoMensaje tipo) {
@@ -109,6 +112,35 @@ public class MensajeService {
             usuarios,
             json
         );
+
+        // 6. enviar push notifications
+        for (MiembroChat miembro : chat.getMiembros()) {
+
+            Usuario receptor =
+                miembro.getUsuario();
+
+            // no enviarse push a sí mismo
+            if (receptor.getId() == userId) {
+                continue;
+            }
+
+            if (
+                receptor.getPushToken() != null &&
+                !receptor.getPushToken().isBlank()
+            ) {
+
+                pushNotificationService.enviarPush(
+                    receptor.getPushToken(),
+                    usuario.getNombre(),
+                    contenido
+                );
+
+                System.out.println(
+                    "PUSH ENVIADA A "
+                    + receptor.getNombre()
+                );
+            }
+        }
     }
 
     public List<MensajeResponse> listar(int chatId, int userId) {

@@ -6,9 +6,11 @@ import com.chat.security.TokenService;
 import com.chat.datatype.LoginRequest;
 import com.chat.datatype.UsuarioDTO;
 import com.chat.datatype.LoginResponse;
+import com.chat.datatype.PushTokenDTO;
 
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
@@ -133,6 +135,34 @@ public class UsuarioController {
             var usuarios = usuarioService.listarUsuarios();
 
             return Response.ok(usuarios).build();
+
+        } catch (Exception e) {
+
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .entity("Token inválido")
+                    .build();
+        }
+    }
+
+    // ENDPOINT PARA GUARDAR EL TOKEN DE PUSH NOTIFICATIONS
+   @POST
+    @Path("/push-token")
+    public Response guardarToken(
+        PushTokenDTO dto,
+        @HeaderParam("Authorization") String token
+    ) {
+
+        try {
+
+            Long userId =
+                tokenService.validarToken(token);
+
+            usuarioService.guardarPushToken(
+                userId.intValue(),
+                dto.getToken()
+            );
+
+            return Response.ok().build();
 
         } catch (Exception e) {
 

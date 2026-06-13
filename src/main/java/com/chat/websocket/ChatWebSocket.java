@@ -33,10 +33,19 @@ public class ChatWebSocket {
 
             Long userId = new TokenService().validarToken(token);
 
-            sessions.put(
-                userId.intValue(),
-                session
-            );
+            
+            Session anterior =
+                sessions.put(
+                    userId.intValue(),
+                    session
+                );
+
+            if (
+                anterior != null &&
+                anterior.isOpen()
+            ) {
+                anterior.close();
+            }
 
             System.out.println(
                 "WS conectado usuario: "
