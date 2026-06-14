@@ -129,7 +129,7 @@ public class ChatDAO {
             SELECT m
             FROM Mensaje m
             WHERE m.chat.chatId = :chatId
-            ORDER BY m.fechaEnviado DESC
+            ORDER BY m.fechaEnviado DESC, m.id DESC
         """, Mensaje.class)
         .setParameter("chatId", chatId)
         .setMaxResults(1)
@@ -137,6 +137,20 @@ public class ChatDAO {
 
         if (mensajes.isEmpty()) {
             return "";
+        }
+
+        if (!mensajes.isEmpty()) {
+
+            Mensaje ultimo = mensajes.get(0);
+
+            System.out.println(
+                "ULTIMO CHAT "
+                + chatId
+                + " -> "
+                + ultimo.getId()
+                + " -> "
+                + ultimo.getContenido()
+            );
         }
 
         Mensaje ultimo = mensajes.get(0);

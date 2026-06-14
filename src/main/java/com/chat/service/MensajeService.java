@@ -11,6 +11,8 @@ import com.chat.enums.TipoMensaje;
 import com.chat.enums.EstadoMensaje;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 import com.chat.websocket.ChatWebSocket;
 import com.chat.datatype.PushTokenDTO;
@@ -31,6 +33,9 @@ public class MensajeService {
     private MensajeUsuarioDAO mensajeUsuarioDAO;
     @Inject
     private PushNotificationService pushNotificationService;
+    @PersistenceContext
+    private EntityManager em;
+
 
     @Transactional
     public void enviarMensaje(int chatId, int userId, String contenido, TipoMensaje tipo) {
@@ -62,6 +67,7 @@ public class MensajeService {
 
         // 3. guardar
         mensajeDAO.guardar(mensaje);
+        em.flush(); // asegurar que el ID se genere antes de continuar
 
         // 4. crear registros en MensajeUsuario para cada receptor
         for (MiembroChat miembro : chat.getMiembros()) {
@@ -75,6 +81,8 @@ public class MensajeService {
 
                 mensajeUsuarioDAO.guardar(mu);
         }
+
+        em.flush(); // asegurar que los registros de MensajeUsuario se guarden antes de enviar notificaciones
 
         // 5. enviar por WebSocket
         String contenidoSeguro = contenido
