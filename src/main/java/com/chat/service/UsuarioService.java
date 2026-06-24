@@ -100,6 +100,8 @@ public class UsuarioService {
 
             usuario.setEstado(TipoEstado.OFFLINE);
 
+            usuario.setPushToken(null);
+
             usuarioDAO.actualizar(usuario);
         }
     }
@@ -115,5 +117,25 @@ public class UsuarioService {
                     u.getEstado().name()
             ))
             .toList();
+    }
+
+    public void guardarPushToken(
+        int usuarioId,
+        String pushToken
+    ) {
+
+        Usuario usuario =
+            usuarioDAO.buscarPorId(usuarioId);
+
+        if (usuario == null) {
+            throw new IllegalArgumentException(
+                "Usuario no existe"
+            );
+        }
+
+        usuarioDAO.limpiarToken(pushToken);
+        usuario.setPushToken(pushToken);
+
+        usuarioDAO.actualizar(usuario);
     }
 }

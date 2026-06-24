@@ -33,7 +33,10 @@ public class Usuario {
     private String rol;
 
     @Column(nullable = true)
-    private String mfa_secret;  
+    private String mfa_secret; 
+    
+    @Column(name = "push_token", length = 255)
+    private String pushToken;
 
     @OneToMany(mappedBy = "usuario")
     private List<MiembroChat> chatsIntegrados;
@@ -59,6 +62,9 @@ public class Usuario {
 
     public String getRol() { return rol; }
     public void setRol(String rol) { this.rol = rol; }
+
+    public String getPushToken() {return pushToken;}
+    public void setPushToken(String pushToken) {this.pushToken = pushToken;}
 
     public List<MiembroChat> getChatsIntegrados() {return chatsIntegrados;}
     public void setChatsIntegrados(List<MiembroChat> chatsIntegrados) {this.chatsIntegrados = chatsIntegrados;}

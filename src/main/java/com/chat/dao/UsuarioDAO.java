@@ -51,9 +51,21 @@ public class UsuarioDAO {
     }
 
     public List<Usuario> listar() {
-    return em.createQuery(
-            "SELECT u FROM Usuario u",
-            Usuario.class
-    ).getResultList();
-}
+        return em.createQuery(
+                "SELECT u FROM Usuario u",
+                Usuario.class
+        ).getResultList();
+    }
+
+    @Transactional
+    public void limpiarToken(String pushToken) {
+
+        em.createQuery("""
+            UPDATE Usuario u
+            SET u.pushToken = null
+            WHERE u.pushToken = :token
+        """)
+        .setParameter("token", pushToken)
+        .executeUpdate();
+    }
 } 
