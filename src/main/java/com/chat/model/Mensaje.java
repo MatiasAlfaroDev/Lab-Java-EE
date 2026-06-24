@@ -63,6 +63,13 @@ public class Mensaje {
     )
     private List<ReaccionMensaje> reacciones = new ArrayList<>();
 
+    @OneToMany(
+    mappedBy = "mensajeReferencia",
+    cascade = CascadeType.ALL,
+    orphanRemoval = true
+    )
+    private List<Adjunto> adjuntos = new ArrayList<>();
+
     @PrePersist
     protected void onCreate() {
         this.fechaEnviado = Instant.now();
@@ -107,4 +114,9 @@ public class Mensaje {
     public void addReaccion(ReaccionMensaje reaccion) { reacciones.add(reaccion); reaccion.setMensaje(this);}
 
     public void removeReaccion(ReaccionMensaje reaccion) {reacciones.remove(reaccion);reaccion.setMensaje(null);}
+
+    public List<Adjunto> getAdjuntos() {return adjuntos;}
+    public void setAdjuntos(List<Adjunto> adjuntos) {this.adjuntos = adjuntos;}
+    public void addAdjunto(Adjunto adjunto) {adjuntos.add(adjunto); adjunto.setMensajeReferencia(this);}
+    public void removeAdjunto(Adjunto adjunto) {adjuntos.remove(adjunto); adjunto.setMensajeReferencia(null);}
 }
