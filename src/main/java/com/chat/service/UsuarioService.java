@@ -81,9 +81,6 @@ public class UsuarioService {
         if (!BCrypt.checkpw(password, usuario.getPassword())) {
             throw new IllegalArgumentException("Credenciales inválidas");
         }
-        if (usuario.isBloqueado()) {
-            throw new IllegalArgumentException("Usuario bloqueado");
-        }
 
         // 3. Cambiar estado
         usuario.setEstado(TipoEstado.ONLINE);
@@ -117,13 +114,11 @@ public class UsuarioService {
                     u.getNombre(),
                     u.getEmail(),
                     u.getRol(),
-                    u.getEstado().name(),
-                    u.isBloqueado()
+                    u.getEstado().name()
             ))
             .toList();
     }
 
-<<<<<<< Updated upstream
     public void guardarPushToken(
         int usuarioId,
         String pushToken
@@ -141,33 +136,6 @@ public class UsuarioService {
         usuarioDAO.limpiarToken(pushToken);
         usuario.setPushToken(pushToken);
 
-=======
-    public void bloquearUsuario(int idAdmin, int idUsuario) {
-        Usuario admin = usuarioDAO.buscarPorId(idAdmin);
-        if (!"ADMIN".equalsIgnoreCase(admin.getRol())) {
-            throw new IllegalArgumentException("No autorizado");
-        }
-
-        Usuario usuario = usuarioDAO.buscarPorId(idUsuario);
-        if (usuario == null) {
-            throw new IllegalArgumentException("Usuario no encontrado");
-        }
-        usuario.setBloqueado(true);
-        usuarioDAO.actualizar(usuario);
-    }
-    public void desbloquearUsuario(int idAdmin, int idUsuario) {
-        Usuario admin = usuarioDAO.buscarPorId(idAdmin);
-        if (!"ADMIN".equalsIgnoreCase(admin.getRol())) {
-            throw new IllegalArgumentException("No autorizado");
-        }
-
-        Usuario usuario = usuarioDAO.buscarPorId(idUsuario);
-        if (usuario == null) {
-            throw new IllegalArgumentException("Usuario no encontrado");
-        }
-
-        usuario.setBloqueado(false);
->>>>>>> Stashed changes
         usuarioDAO.actualizar(usuario);
     }
 }
