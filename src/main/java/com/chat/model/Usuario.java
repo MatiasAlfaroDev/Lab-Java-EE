@@ -38,6 +38,9 @@ public class Usuario {
     @Column(name = "push_token", length = 255)
     private String pushToken;
 
+    @Column(nullable = false)
+    private boolean bloqueado = false;
+
     @OneToMany(mappedBy = "usuario")
     private List<MiembroChat> chatsIntegrados;
 
@@ -69,4 +72,6 @@ public class Usuario {
     public List<MiembroChat> getChatsIntegrados() {return chatsIntegrados;}
     public void setChatsIntegrados(List<MiembroChat> chatsIntegrados) {this.chatsIntegrados = chatsIntegrados;}
     
+    public boolean isBloqueado() { return bloqueado; }
+    public void setBloqueado(boolean bloqueado) { this.bloqueado = bloqueado;}
 }
