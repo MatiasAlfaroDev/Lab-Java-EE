@@ -74,7 +74,8 @@ public class UsuarioController {
                 usuario.getNombre(),
                 usuario.getEmail(),
                 usuario.getRol(),
-                usuario.getEstado().name()
+                usuario.getEstado().name(),
+                usuario.isBloqueado()
             );
 
             String token = tokenService.generarToken(usuario);
@@ -168,6 +169,60 @@ public class UsuarioController {
 
             return Response.status(Response.Status.UNAUTHORIZED)
                     .entity("Token inválido")
+                    .build();
+        }
+    }
+
+    @PUT
+    @Path("/bloquear/{id}")
+    public Response bloquearUsuario(
+            @HeaderParam("Authorization") String token,
+            @PathParam("id") int id) {
+
+        try {
+
+            if (token == null || token.isBlank()) {
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity("Falta token")
+                        .build();
+            }
+
+            Long userId = tokenService.validarToken(token);
+
+            usuarioService.bloquearUsuario(userId.intValue(), id);
+
+            return Response.ok("Usuario bloqueado").build();
+
+        } catch (Exception e) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(e.getMessage())
+                    .build();
+        }
+    }
+
+    @PUT
+    @Path("/desbloquear/{id}")
+    public Response desbloquearUsuario(
+            @HeaderParam("Authorization") String token,
+            @PathParam("id") int id) {
+
+        try {
+
+            if (token == null || token.isBlank()) {
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity("Falta token")
+                        .build();
+            }
+
+            Long userId = tokenService.validarToken(token);
+
+            usuarioService.desbloquearUsuario(userId.intValue(), id);
+
+            return Response.ok("Usuario desbloqueado").build();
+
+        } catch (Exception e) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(e.getMessage())
                     .build();
         }
     }
