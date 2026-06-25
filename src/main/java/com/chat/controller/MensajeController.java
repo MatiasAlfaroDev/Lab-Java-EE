@@ -1,15 +1,24 @@
 package com.chat.controller;
 
 import com.chat.service.MensajeService;
+import com.chat.service.MinioService;
 import com.chat.datatype.EnviarMensajeRequest;
 import com.chat.security.TokenService;
 import com.chat.enums.TipoMensaje;
 import com.chat.model.Mensaje;
+import com.chat.dao.AdjuntoDAO;
 import com.chat.datatype.EditarMensajeRequest;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import com.chat.datatype.UploadAdjuntoResponse;
+import jakarta.ws.rs.core.MultivaluedMap;
+import java.io.InputStream;
+import java.util.List;
+import com.chat.datatype.UploadAdjuntoRequest;
+import java.util.Base64;
+import java.io.ByteArrayInputStream;
 
 @Path("/mensajes")
 @Produces(MediaType.APPLICATION_JSON)
@@ -21,6 +30,12 @@ public class MensajeController {
 
     @Inject
     private TokenService tokenService;
+
+    @Inject
+    private MinioService minioService;
+
+    @Inject
+    private AdjuntoDAO adjuntoDAO;
 
     @POST
     @Path("/enviar")
@@ -64,7 +79,9 @@ public class MensajeController {
                     request.getChatId(),
                     userId.intValue(),
                     request.getContenido(),
-                    tipo
+                    tipo,
+                    request.getNombreArchivo(),
+                    request.getTamanoArchivo()
             );
 
             return Response.ok("Mensaje enviado").build();
@@ -334,6 +351,69 @@ public class MensajeController {
             e.printStackTrace();
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity("Error interno")
+                    .build();
+        }
+    }
+
+    @POST
+    @Path("/upload")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response subirAdjunto(
+            UploadAdjuntoRequest request,
+            @HeaderParam("Authorization") String token) {
+
+        try {
+
+            if (token == null || token.isBlank()) {
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity("Falta token")
+                        .build();
+            }
+
+            tokenService.validarToken(token);
+
+            if (request == null
+                    || request.getContenidoBase64() == null
+                    || request.getContenidoBase64().isBlank()
+                    || request.getNombreArchivo() == null
+                    || request.getNombreArchivo().isBlank()) {
+
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity("Datos inválidos")
+                        .build();
+            }
+
+            byte[] bytes =
+                    Base64.getDecoder()
+                            .decode(request.getContenidoBase64());
+
+            ByteArrayInputStream inputStream =
+                    new ByteArrayInputStream(bytes);
+
+            String urlArchivo =
+                    minioService.subirArchivo(
+                            inputStream,
+                            request.getNombreArchivo(),
+                            bytes.length,
+                            request.getMimeType()
+                    );
+
+            UploadAdjuntoResponse response =
+                    new UploadAdjuntoResponse(
+                            urlArchivo,
+                            request.getNombreArchivo(),
+                            (long) bytes.length
+                    );
+
+            return Response.ok(response).build();
+
+        } catch (Exception e) {
+
+            e.printStackTrace();
+
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(e.getMessage())
                     .build();
         }
     }

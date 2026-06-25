@@ -1,6 +1,7 @@
 package com.chat.service;
 
 import com.chat.dao.MensajeDAO;
+import com.chat.dao.AdjuntoDAO;
 import com.chat.dao.ChatDAO;
 import com.chat.dao.UsuarioDAO;
 import com.chat.dao.MensajeUsuarioDAO;
@@ -16,6 +17,7 @@ import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 import com.chat.websocket.ChatWebSocket;
 import com.chat.datatype.PushTokenDTO;
+import com.chat.dao.AdjuntoDAO;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -33,12 +35,14 @@ public class MensajeService {
     private MensajeUsuarioDAO mensajeUsuarioDAO;
     @Inject
     private PushNotificationService pushNotificationService;
+    @Inject
+    private AdjuntoDAO adjuntoDAO;
     @PersistenceContext
     private EntityManager em;
 
 
     @Transactional
-    public void enviarMensaje(int chatId, int userId, String contenido, TipoMensaje tipo) {
+    public void enviarMensaje(int chatId, int userId, String contenido, TipoMensaje tipo, String nombreArchivo, Long tamanoArchivo) {
 
         // 1. validaciones
         Chat chat = chatDAO.buscarPorId(chatId);
@@ -69,6 +73,20 @@ public class MensajeService {
         mensajeDAO.guardar(mensaje);
         em.flush(); // asegurar que el ID se genere antes de continuar
 
+        if (tipo == TipoMensaje.ARCHIVO
+                || tipo == TipoMensaje.IMAGEN
+                || tipo == TipoMensaje.VIDEO) {
+
+            Adjunto adjunto = new Adjunto();
+
+            adjunto.setMensajeReferencia(mensaje);
+            adjunto.setNombreArchivo(nombreArchivo);
+            adjunto.setUrlArchivo(contenido); // contenido contiene la URL
+            adjunto.setTamanoArchivo(tamanoArchivo);
+
+            adjuntoDAO.guardar(adjunto);
+        }
+        
         // 4. crear registros en MensajeUsuario para cada receptor
         for (MiembroChat miembro : chat.getMiembros()) {
             Usuario receptor = miembro.getUsuario();

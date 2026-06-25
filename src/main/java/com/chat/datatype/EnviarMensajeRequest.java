@@ -5,6 +5,8 @@ public class EnviarMensajeRequest {
     private int chatId;
     private String contenido;
     private String tipo;
+    private String nombreArchivo;
+    private Long tamanoArchivo;
 
     public int getChatId() {
         return chatId;
@@ -29,4 +31,21 @@ public class EnviarMensajeRequest {
     public void setTipo(String tipo) {
         this.tipo = tipo;
     }
+
+    public String getNombreArchivo() {
+        return nombreArchivo;
+    }
+
+    public void setNombreArchivo(String nombreArchivo) {
+        this.nombreArchivo = nombreArchivo;
+    }
+
+    public Long getTamanoArchivo() {
+        return tamanoArchivo;
+    }
+
+    public void setTamanoArchivo(Long tamanoArchivo) {
+        this.tamanoArchivo = tamanoArchivo;
+    }
+
 }
