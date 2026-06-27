@@ -946,13 +946,106 @@
     function entrarApp() {
         $("#vista-login").hidden = true;
         $("#vista-app").hidden = false;
+
         setAvatar($("#mi-avatar"), state.usuario.nombre, state.usuario.initials);
+
+        if (state.usuario.rol === "ADMIN") {
+            $(".search-pill").hidden = true;
+            $(".section-label").hidden = true;
+            $("#lista-chats").hidden = true;
+            $("#chats-vacio").hidden = true;
+            $("#btn-nuevo-chat").hidden = true;
+            $("#panel-vacio").hidden = true;
+            $("#panel-chat").hidden = true;
+            $("#panel-admin").hidden = false;
+
+            cargarUsuariosAdmin();
+            conectarWs();
+            return;
+        }
+
+        $("#panel-admin").hidden = true;
         $("#panel-chat").hidden = true;
         $("#panel-vacio").hidden = false;
+
         cargarChats();
         conectarWs();
     }
 
+    //admin
+    async function cargarUsuariosAdmin() {
+        try {
+            const usuarios = await api("GET", "api/usuarios/listar");
+
+            const ul = $("#lista-usuarios-admin");
+            ul.innerHTML = "";
+
+            for (const u of usuarios) {
+                // No mostrar al administrador
+                if (u.rol === "ADMIN") continue;
+
+                const accion = document.createElement("button");
+                accion.className = "btn-icono";
+
+                accion.innerHTML = u.bloqueado
+                    ? '<ion-icon name="lock-open-outline"></ion-icon>'
+                    : '<ion-icon name="ban-outline"></ion-icon>';
+
+                accion.title = u.bloqueado ? "Desbloquear" : "Bloquear";
+
+                accion.addEventListener("click", () => abrirModalBloqueo(u));
+
+                const li = filaPersona({
+                    ...u,
+                    estadoTexto: u.estado === "ONLINE"
+                        ? "🟢 En línea"
+                        : "⚪ Desconectado"
+                }, accion);
+
+                ul.appendChild(li);
+            }
+        } catch (e) {
+            alert(e.message);
+        }
+    }
+
+    let usuarioSeleccionado = null;
+    function abrirModalBloqueo(usuario) {
+        const modal = document.getElementById("modal-bloqueo");
+        const texto = document.getElementById("texto-modal-bloqueo");
+        const btnConfirmar = document.getElementById("btn-confirmar-bloqueo");
+        const btnCancelar = document.getElementById("btn-cancelar");
+
+        const accion = usuario.bloqueado ? "desbloquear" : "bloquear";
+
+        texto.innerText = `¿Deseás ${accion} a ${usuario.nombre}?`;
+
+        // CONFIRMAR
+        btnConfirmar.onclick = async () => {
+            try {
+                if (usuario.bloqueado) {
+                    await api("PUT", `api/usuarios/desbloquear/${usuario.id}`);
+                } else {
+                    await api("PUT", `api/usuarios/bloquear/${usuario.id}`);
+                }
+
+                cerrarModalBloqueo();
+                cargarUsuariosAdmin();
+
+            } catch (e) {
+                alert(e.message);
+            }
+        };
+
+        // ❌ CANCELAR (ACÁ ESTABA EL PROBLEMA)
+        btnCancelar.onclick = cerrarModalBloqueo;
+
+        modal.style.display = "flex";
+    }
+    function cerrarModalBloqueo() {
+        document.getElementById("modal-bloqueo").style.display = "none";
+        usuarioSeleccionado = null;
+    }
     // ───────── Validación de registro (como utils/validators.ts) ─────────
     function validarRegistro(nombre, email, password, confirmar) {
         if (!nombre) return "Ingresá un nombre de usuario";
@@ -985,10 +1078,25 @@
         $("#form-login").addEventListener("submit", async (ev) => {
             ev.preventDefault();
             $("#auth-error").textContent = "";
+
             try {
-                await login($("#login-email").value.trim(), $("#login-password").value);
-            } catch {
-                $("#auth-error").textContent = "Credenciales incorrectas";
+                await login(
+                    $("#login-email").value.trim(),
+                    $("#login-password").value
+                );
+            } catch (e) {
+
+                const msg = e?.message;
+
+                if (msg === "Usuario bloqueado") {
+                    $("#auth-error").textContent = "Usuario bloqueado";
+                } 
+                else if (msg === "Credenciales inválidas") {
+                    $("#auth-error").textContent = "Credenciales incorrectas";
+                } 
+                else {
+                    $("#auth-error").textContent = "Error al iniciar sesión";
+                }
             }
         });
 
