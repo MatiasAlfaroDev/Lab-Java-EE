@@ -156,6 +156,25 @@
                     </div>
                 </div>
             </div>
+            <div id="panel-admin" hidden>
+                <header class="chat-header">
+                    <h2>Gestión de usuarios</h2>
+                </header>
+
+                <p class="section-label">USUARIOS REGISTRADOS</p>
+
+                <ul id="lista-usuarios-admin" class="lista-personas"></ul>
+                <div id="modal-bloqueo" class="modal" style="display:none;">
+                    <div class="modal-content">
+                        <p id="texto-modal-bloqueo"></p>
+
+                        <div style="display:flex; gap:10px; justify-content:flex-end;">
+                            <button id="btn-cancelar">Cancelar</button>
+                            <button id="btn-confirmar-bloqueo">Confirmar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </main>
     </div>
 
@@ -267,7 +286,6 @@
                     <ion-icon name="chevron-forward-outline"></ion-icon>
                 </div>
             </div>
-
             <button id="btn-logout" class="btn-peligro btn-full">
                 <ion-icon name="log-out-outline"></ion-icon> Cerrar sesión
             </button>
