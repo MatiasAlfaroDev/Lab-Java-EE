@@ -51,10 +51,13 @@ public class UsuarioDAO {
     }
 
     public List<Usuario> listar() {
-        return em.createQuery(
-                "SELECT u FROM Usuario u",
-                Usuario.class
-        ).getResultList();
+        return em.createQuery("""
+            SELECT u
+            FROM Usuario u
+            WHERE u.rol <> 'ADMIN'
+            AND u.bloqueado = false
+            """, Usuario.class)
+            .getResultList();
     }
 
     @Transactional
