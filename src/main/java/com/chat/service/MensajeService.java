@@ -43,7 +43,7 @@ public class MensajeService {
 
 
     @Transactional
-    public void enviarMensaje(int chatId, int userId, String contenido, TipoMensaje tipo, String nombreArchivo, Long tamanoArchivo) {
+    public void enviarMensaje(int chatId, int userId, String contenido, TipoMensaje tipo, String nombreArchivo, Long tamanoArchivo, String mimeType) {
 
         // 1. validaciones
         Chat chat = chatDAO.buscarPorId(chatId);
@@ -84,6 +84,7 @@ public class MensajeService {
             adjunto.setNombreArchivo(nombreArchivo);
             adjunto.setUrlArchivo(contenido); // contenido contiene la URL
             adjunto.setTamanoArchivo(tamanoArchivo);
+            adjunto.setMimeType(mimeType);
 
             adjuntoDAO.guardar(adjunto);
         }

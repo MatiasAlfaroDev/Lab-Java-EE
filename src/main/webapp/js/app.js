@@ -1228,7 +1228,8 @@
                     contenido: archivo.urlArchivo,
                     tipo: "ARCHIVO",
                     nombreArchivo: archivo.nombreArchivo,
-                    tamanoArchivo: archivo.tamanoArchivo
+                    tamanoArchivo: archivo.tamanoArchivo,
+                    mimeType: file.type
 
                 });
                 await cargarMensajes(state.chatActual.id);

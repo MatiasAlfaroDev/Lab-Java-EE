@@ -74,6 +74,7 @@ public class MensajeController {
                         .build();
             }
 
+            System.out.println("MIME TYPE = " + request.getMimeType());
             // 4. llamar service
             mensajeService.enviarMensaje(
                     request.getChatId(),
@@ -81,7 +82,8 @@ public class MensajeController {
                     request.getContenido(),
                     tipo,
                     request.getNombreArchivo(),
-                    request.getTamanoArchivo()
+                    request.getTamanoArchivo(),
+                    request.getMimeType()
             );
 
             return Response.ok("Mensaje enviado").build();

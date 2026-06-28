@@ -7,6 +7,7 @@ public class EnviarMensajeRequest {
     private String tipo;
     private String nombreArchivo;
     private Long tamanoArchivo;
+    private String mimeType;
 
     public int getChatId() {
         return chatId;
@@ -46,6 +47,14 @@ public class EnviarMensajeRequest {
 
     public void setTamanoArchivo(Long tamanoArchivo) {
         this.tamanoArchivo = tamanoArchivo;
+    }
+
+    public String getMimeType() {
+        return mimeType;
+    }
+
+    public void setMimeType(String mimeType) {
+        this.mimeType = mimeType;
     }
 
 }
