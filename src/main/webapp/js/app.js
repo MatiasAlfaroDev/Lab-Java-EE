@@ -86,7 +86,11 @@
         });
 
         const texto = await res.text();
-        if (!res.ok) throw new Error(texto || `Error ${res.status}`);
+        if (!res.ok) {
+            console.log("STATUS:", res.status);
+            console.log("RESPUESTA:", texto);
+            throw new Error(texto || `Error ${res.status}`);
+        }
         try { return JSON.parse(texto); } catch { return texto; }
     }
 
@@ -417,7 +421,21 @@
 
         const texto = document.createElement("span");
         texto.className = "bubble-texto" + (m.eliminado ? " eliminado" : "");
-        texto.textContent = m.eliminado ? "Mensaje eliminado" : (m.contenido ?? "");
+        if (m.eliminado) {
+            texto.textContent = "Mensaje eliminado";
+        } else if (m.tipo === "ARCHIVO" && m.adjunto) {
+            texto.textContent = `📎 ${m.adjunto.nombreArchivo}`;
+            texto.style.cursor = "pointer";
+            texto.addEventListener("click", async () => {
+                try {
+                    await abrirAdjunto(m.adjunto);
+                } catch (e) {
+                    alert(e.message);
+                }
+            });
+        } else {
+            texto.textContent = m.contenido ?? "";
+        }
         bubble.appendChild(texto);
 
         if (!m.eliminado) {
@@ -525,6 +543,51 @@
         } catch (e) {
             alert("No se pudo enviar: " + e.message);
         }
+    }
+
+    async function subirAdjunto(file) {
+
+        const base64 = await new Promise((resolve, reject) => {
+
+            const reader = new FileReader();
+
+            reader.onload = () => {
+
+                resolve(reader.result.split(",")[1]);
+
+            };
+
+            reader.onerror = reject;
+
+            reader.readAsDataURL(file);
+
+        });
+
+        return api("POST", "api/mensajes/upload", {
+
+            nombreArchivo: file.name,
+            mimeType: file.type,
+            contenidoBase64: base64
+
+        });
+
+    }
+
+    async function abrirAdjunto(adjunto) {
+        const res = await fetch(
+            `api/mensajes/adjunto/${adjunto.urlArchivo}`,
+            {
+                headers: {
+                    Authorization: state.token
+                }
+            }
+        );
+        if (!res.ok) {
+            throw new Error("No se pudo descargar el archivo");
+        }
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        window.open(url, "_blank");
     }
 
     function iniciarEdicion(m) {
@@ -1040,6 +1103,33 @@
         $("#btn-emoji").addEventListener("click", (ev) => {
             ev.stopPropagation();
             $("#emoji-picker").hidden = !$("#emoji-picker").hidden;
+        });
+        $("#btn-adjunto").addEventListener("click", () => {
+            $("#input-adjunto").click();
+        });
+        $("#input-adjunto").addEventListener("change", async (ev) => {
+            const file = ev.target.files[0];
+            if (!file || !state.chatActual) {
+                return;
+            }
+            try {
+                const archivo = await subirAdjunto(file);
+                await api("POST", "api/mensajes/enviar", {
+
+                    chatId: state.chatActual.id,
+                    contenido: archivo.urlArchivo,
+                    tipo: "ARCHIVO",
+                    nombreArchivo: archivo.nombreArchivo,
+                    tamanoArchivo: archivo.tamanoArchivo
+
+                });
+                await cargarMensajes(state.chatActual.id);
+                cargarChats();
+            } catch (e) {
+                alert("Error enviando archivo: " + e.message);
+            } finally {
+                ev.target.value = "";
+            }
         });
         document.addEventListener("click", (ev) => {
             if (!ev.target.closest("#emoji-picker") && !ev.target.closest("#btn-emoji")) {

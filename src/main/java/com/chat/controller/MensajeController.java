@@ -417,5 +417,44 @@ public class MensajeController {
                     .build();
         }
     }
+
+    @GET
+    @Path("/adjunto/{objeto}")
+    public Response descargarAdjunto(
+            @PathParam("objeto") String objeto,
+            @HeaderParam("Authorization") String token) {
+
+        try {
+
+            if (token == null || token.isBlank()) {
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity("Falta token")
+                        .build();
+            }
+
+            tokenService.validarToken(token);
+
+            InputStream inputStream =
+                    minioService.descargarArchivo(objeto);
+
+            String mimeType =
+                minioService.obtenerMimeType(objeto);
+            return Response.ok(inputStream)
+                .type(mimeType)
+                .header(
+                        "Content-Disposition",
+                        "inline; filename=\"" + objeto + "\""
+                )
+                .build();
+
+        } catch (Exception e) {
+
+            e.printStackTrace();
+
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(e.getMessage())
+                    .build();
+        }
+    }
 }
 

@@ -10,6 +10,7 @@ public class MensajeResponse {
     public String sender_username;
     public String sender_initials;
     public String contenido;
+    public String tipo;
     public String sent_at;
     public String estado;
     public boolean entregado;
@@ -18,4 +19,5 @@ public class MensajeResponse {
     public boolean eliminado;
     public List<ReaccionDTO> reacciones;
     public int mensajeOrigenId;
+    public UploadAdjuntoResponse adjunto;
 }

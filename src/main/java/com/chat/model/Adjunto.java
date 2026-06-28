@@ -38,6 +38,9 @@ public class Adjunto {
     @Column(nullable = false)       
     private Long tamanoArchivo;
 
+    @Column(name = "mime_type", nullable = false)
+    private String mimeType;
+
     @PrePersist
     protected void onCreate() {
         this.fechaSubida = LocalDateTime.now();
@@ -53,5 +56,6 @@ public class Adjunto {
     public LocalDateTime getFechaSubida() { return fechaSubida; }
     public Long getTamanoArchivo() { return tamanoArchivo; }
     public void setTamanoArchivo(Long tamanoArchivo) { this.tamanoArchivo = tamanoArchivo; }
-
+    public String getMimeType() {return mimeType;}
+    public void setMimeType(String mimeType) {this.mimeType = mimeType;}
 }

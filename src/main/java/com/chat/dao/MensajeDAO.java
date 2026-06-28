@@ -20,7 +20,7 @@ public class MensajeDAO {
 
     public List<Mensaje> listarPorChat(int chatId, int usuarioId) {
     return em.createQuery(
-            "SELECT m FROM Mensaje m WHERE m.chat.chatId = :chatId AND NOT EXISTS (\n" + //
+            "SELECT DISTINCT m FROM Mensaje m LEFT JOIN FETCH m.adjuntos WHERE m.chat.chatId = :chatId AND NOT EXISTS (\n" + //
                                 "            SELECT 1\n" + //
                                 "            FROM MensajeUsuario mu\n" + //
                                 "            WHERE mu.mensaje.id = m.id\n" + //

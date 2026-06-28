@@ -7,6 +7,7 @@ import com.chat.dao.UsuarioDAO;
 import com.chat.dao.MensajeUsuarioDAO;
 import com.chat.datatype.MensajeResponse;
 import com.chat.datatype.ReaccionDTO;
+import com.chat.datatype.UploadAdjuntoResponse;
 import com.chat.model.*;
 import com.chat.enums.TipoMensaje;
 import com.chat.enums.EstadoMensaje;
@@ -86,7 +87,7 @@ public class MensajeService {
 
             adjuntoDAO.guardar(adjunto);
         }
-        
+
         // 4. crear registros en MensajeUsuario para cada receptor
         for (MiembroChat miembro : chat.getMiembros()) {
             Usuario receptor = miembro.getUsuario();
@@ -191,6 +192,17 @@ public class MensajeService {
                 .toUpperCase();
             dto.contenido =
                 m.getContenido();
+            dto.tipo = m.getTipo().name();
+            if (!m.getAdjuntos().isEmpty()) {
+
+                Adjunto adjunto = m.getAdjuntos().get(0);
+
+                dto.adjunto = new UploadAdjuntoResponse(
+                    adjunto.getUrlArchivo(),
+                    adjunto.getNombreArchivo(),
+                    adjunto.getTamanoArchivo()
+                );
+            }
             dto.sent_at =
                 m.getFechaEnviado().toString();
             dto.estado =

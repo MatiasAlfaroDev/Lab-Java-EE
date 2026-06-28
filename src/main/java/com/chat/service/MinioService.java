@@ -5,6 +5,9 @@ import io.minio.MakeBucketArgs;
 import io.minio.MinioClient;
 import jakarta.enterprise.context.ApplicationScoped;
 import io.minio.PutObjectArgs;
+import io.minio.StatObjectArgs;
+import io.minio.StatObjectResponse;
+
 import java.io.InputStream;
 import java.util.UUID;
 import io.minio.GetObjectArgs;
@@ -91,6 +94,24 @@ public class MinioService {
 
         } catch (Exception e) {
             throw new RuntimeException("Error al descargar archivo de MinIO", e);
+        }
+    }
+
+    public String obtenerMimeType(String nombreObjeto) {
+        try {
+            StatObjectResponse stat =
+                client.statObject(
+                    StatObjectArgs.builder()
+                        .bucket(bucket)
+                        .object(nombreObjeto)
+                        .build()
+                );
+            return stat.contentType();
+        } catch (Exception e) {
+            throw new RuntimeException(
+                "Error obteniendo tipo de archivo",
+                e
+            );
         }
     }
 }
