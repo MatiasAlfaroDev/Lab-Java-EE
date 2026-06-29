@@ -5,6 +5,7 @@ import com.chat.datatype.CrearChatRequest;
 import com.chat.datatype.AgregarMiembroRequest;
 import com.chat.datatype.ChatDTO;
 import com.chat.datatype.EliminarMiembroRequest;
+import com.chat.datatype.CambiarRolRequest;
 import com.chat.model.Chat;
 import com.chat.security.TokenService;
 
@@ -274,6 +275,52 @@ public class ChatController {
         } catch (Exception e) {
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity(e.getMessage())
+                    .build();
+        }
+    }
+
+    @POST
+    @Path("/cambiar-rol")
+    public Response cambiarRol(
+        CambiarRolRequest request,
+        @HeaderParam("Authorization") String token
+    ) {
+        try {
+            if (token == null || token.isBlank()) {
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity("Falta token")
+                        .build();
+            }
+
+            Long actorId = tokenService.validarToken(token);
+
+            if (request == null ||
+                request.getChatId() <= 0 ||
+                request.getUsuarioId() <= 0 ||
+                request.getRol() == null ||
+                request.getRol().isBlank()) {
+
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity("Datos inválidos")
+                        .build();
+            }
+
+            chatService.cambiarRolMiembro(
+                request.getChatId(),
+                actorId.intValue(),
+                request.getUsuarioId(),
+                request.getRol()
+            );
+
+            return Response.ok("Rol actualizado").build();
+
+        } catch (RuntimeException e) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(e.getMessage())
+                    .build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .entity("Token inválido")
                     .build();
         }
     }

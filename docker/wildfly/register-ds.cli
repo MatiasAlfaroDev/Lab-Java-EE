@@ -1,0 +1,6 @@
+# Registra el driver PostgreSQL y el datasource ChatDS en standalone.xml (offline).
+module add --name=org.postgresql --resources=/tmp/postgresql.jar --dependencies=java.se
+embed-server --server-config=standalone.xml
+/subsystem=datasources/jdbc-driver=postgresql:add(driver-name=postgresql,driver-module-name=org.postgresql,driver-class-name=org.postgresql.Driver)
+data-source add --name=ChatDS --jndi-name=java:/jdbc/ChatDS --driver-name=postgresql --connection-url=${db.url} --user-name=${db.user} --password=${db.password} --min-pool-size=1 --max-pool-size=10 --enabled=true --use-java-context=true
+stop-embedded-server

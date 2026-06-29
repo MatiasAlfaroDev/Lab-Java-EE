@@ -344,6 +344,52 @@ public class ChatService {
         chatDAO.eliminarMiembro(chatId, usuarioEliminarId);
     }
 
+    @Transactional
+    public void cambiarRolMiembro(int chatId, int actorId, int objetivoId, String nuevoRolStr) {
+
+        Chat chat = chatDAO.buscarPorId(chatId);
+        if (chat == null) {
+            throw new RuntimeException("El chat no existe");
+        }
+
+        if (chat.getTipo() != TipoChat.GRUPO) {
+            throw new RuntimeException("Solo en chats grupales");
+        }
+
+        // actor debe ser ADMINISTRADOR o CREADOR
+        MiembroChat actor = chatDAO.buscarMiembro(chatId, actorId);
+        if (actor == null) {
+            throw new RuntimeException("No perteneces al chat");
+        }
+        if (actor.getChatRol() != ChatRol.ADMINISTRADOR &&
+            actor.getChatRol() != ChatRol.CREADOR) {
+            throw new RuntimeException("No tienes permisos");
+        }
+
+        // objetivo debe existir y no ser el CREADOR
+        MiembroChat objetivo = chatDAO.buscarMiembro(chatId, objetivoId);
+        if (objetivo == null) {
+            throw new RuntimeException("El usuario no pertenece al chat");
+        }
+        if (objetivo.getChatRol() == ChatRol.CREADOR) {
+            throw new RuntimeException("No se puede cambiar el rol del creador");
+        }
+
+        // solo se permite ADMINISTRADOR o MIEMBRO
+        ChatRol nuevoRol;
+        try {
+            nuevoRol = ChatRol.valueOf(nuevoRolStr);
+        } catch (Exception e) {
+            throw new RuntimeException("Rol inválido");
+        }
+        if (nuevoRol != ChatRol.ADMINISTRADOR && nuevoRol != ChatRol.MIEMBRO) {
+            throw new RuntimeException("Rol no permitido");
+        }
+
+        objetivo.setChatRol(nuevoRol);
+        em.merge(objetivo);
+    }
+
     public List<MiembroChatDTO> listarMiembros(int chatId, int userId) {
 
         Chat chat = chatDAO.buscarPorId(chatId);

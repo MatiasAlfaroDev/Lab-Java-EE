@@ -835,6 +835,12 @@
         $("#ginfo-nombre").textContent = nombre;
         $("#ginfo-error").textContent = "";
         $("#ginfo-editar").hidden = true;
+
+        const esGrupo = state.chatActual.tipo === "GRUPO";
+        $("#btn-renombrar").hidden            = !esGrupo;
+        $("#btn-agregar-participante").hidden  = !esGrupo;
+        $("#btn-salir-grupo").hidden           = !esGrupo;
+
         const ul = $("#ginfo-miembros");
         notaLista(ul, "Cargando participantes…");
         $("#modal-grupo-info").hidden = false;
@@ -858,9 +864,10 @@
             return;
         }
 
+        const esGrupo = state.chatActual?.tipo === "GRUPO";
         for (const m of state.miembros) {
             let extra = null;
-            if (m.id !== state.usuario.id) {
+            if (esGrupo && m.id !== state.usuario.id) {
                 extra = document.createElement("button");
                 extra.className = "btn-icono quitar";
                 extra.title = "Eliminar del grupo";
