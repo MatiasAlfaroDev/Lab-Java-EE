@@ -1,0 +1,4 @@
+# Scripts que corren en el contenedor Linux deben mantener LF.
+*.sh text eol=lf
+*.cli text eol=lf
+Dockerfile text eol=lf
