@@ -55,7 +55,7 @@ public class Mensaje {
     @Column(nullable = false)
     private boolean eliminado;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "boolean default false")
     private boolean cifrado;
 
     @OneToMany(

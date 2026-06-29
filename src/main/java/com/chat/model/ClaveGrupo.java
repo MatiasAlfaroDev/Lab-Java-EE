@@ -23,7 +23,7 @@ public class ClaveGrupo {
     private String claveEnvuelta;
 
     @Column(nullable = false)
-    private int version;
+    private long version;
 
     public int getId() { return id; }
     public int getChatId() { return chatId; }
@@ -34,6 +34,6 @@ public class ClaveGrupo {
     public void setDistribuidorId(int distribuidorId) { this.distribuidorId = distribuidorId; }
     public String getClaveEnvuelta() { return claveEnvuelta; }
     public void setClaveEnvuelta(String claveEnvuelta) { this.claveEnvuelta = claveEnvuelta; }
-    public int getVersion() { return version; }
-    public void setVersion(int version) { this.version = version; }
+    public long getVersion() { return version; }
+    public void setVersion(long version) { this.version = version; }
 }

@@ -9,7 +9,7 @@ public class ClaveGrupoRequest {
         public String claveEnvuelta;
     }
 
-    public int version;
+    public long version;
     public int distribuidorId;
     public List<Envuelta> envueltas;
 }

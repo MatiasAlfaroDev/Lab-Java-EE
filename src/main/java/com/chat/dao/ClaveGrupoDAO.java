@@ -6,8 +6,6 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
-import java.util.List;
-
 @ApplicationScoped
 public class ClaveGrupoDAO {
 
@@ -16,7 +14,7 @@ public class ClaveGrupoDAO {
 
     @Transactional
     public void guardarOActualizar(int chatId, int miembroId, int distribuidorId,
-                                   String claveEnvuelta, int version) {
+                                   String claveEnvuelta, long version) {
         em.createQuery(
             "DELETE FROM ClaveGrupo c WHERE c.chatId = :chatId AND c.miembroId = :miembroId")
           .setParameter("chatId", chatId)

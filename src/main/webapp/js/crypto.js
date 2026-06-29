@@ -225,10 +225,7 @@ const Crypto = (() => {
    */
   async function decryptFile(ciphertextB64, fileKeyB64) {
     try {
-      const fileKey = await importGroupKey(fileKeyB64);
-      // importGroupKey usa ["encrypt","decrypt"]; necesitamos decrypt
-      const rawKey = await crypto.subtle.exportKey("raw", fileKey);
-      const dk = await crypto.subtle.importKey("raw", rawKey, { name: "AES-GCM" }, false, ["decrypt"]);
+      const dk = await importGroupKey(fileKeyB64);
       const { iv, ct } = unpack(ciphertextB64);
       const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, dk, ct);
       return new Blob([plain]);

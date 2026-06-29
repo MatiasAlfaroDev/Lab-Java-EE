@@ -622,9 +622,15 @@
                         const pub = await getPubKey(otroM.id);
                         if (pub) { payload = await Crypto.encryptDirect(contenido, pub); cifrado = true; }
                     }
+                    if (!cifrado) {
+                        throw new Error("No se puede cifrar: destinatario sin clave E2E registrada");
+                    }
                     await api("POST", "api/mensajes/enviar", { chatId, contenido: payload, tipo: "TEXTO", cifrado });
                 }
                 if (esGrupo) {
+                    if (!cifrado) {
+                        throw new Error("No se puede cifrar: destinatario sin clave E2E registrada");
+                    }
                     await api("POST", "api/mensajes/enviar", { chatId, contenido: payload, tipo: "TEXTO", cifrado });
                 }
             }
@@ -1116,6 +1122,9 @@
                     }
 
                     // 4. Enviar como mensaje normal (el servidor lo ve como un mensaje nuevo)
+                    if (!cifrado) {
+                        throw new Error("No se puede cifrar: destinatario sin clave E2E registrada");
+                    }
                     await api("POST", "api/mensajes/enviar", {
                         chatId: chatDestino.id,
                         contenido: payload,
@@ -1429,6 +1438,9 @@
                            : mimeType.startsWith("video/") ? "VIDEO"
                            : "ARCHIVO";
 
+                if (!cifrado) {
+                    throw new Error("No se puede cifrar: destinatario sin clave E2E registrada");
+                }
                 await api("POST", "api/mensajes/enviar", {
                     chatId,
                     contenido: payload,
