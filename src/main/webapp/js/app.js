@@ -23,7 +23,9 @@
         ws: null,
         wsTimer: null,
         wsPing: null,
-        online: false
+        online: false,
+        groupKeys: {},    // chatId (number) → CryptoKey AES-GCM
+        pubKeyCache: {}   // userId (number) → b64 SPKI
     };
 
     const $ = (sel) => document.querySelector(sel);
@@ -344,6 +346,24 @@
         if (!state.chatActual || state.chatActual.id !== chatId) return;
 
         state.mensajes = mensajes;
+
+        // Descifrar mensajes cifrados
+        const esGrupo = state.chatActual?.tipo === "GRUPO";
+        for (const m of state.mensajes) {
+            if (!m.cifrado || m.eliminado) { m._plain = m.contenido; continue; }
+            try {
+                if (esGrupo) {
+                    const gk = await getGroupKey(chatId);
+                    m._plain = gk ? await Crypto.decryptGroup(m.contenido, gk) : null;
+                } else {
+                    const otherPub = await getPubKey(m.sender_id === state.usuario.id
+                        ? state.miembros?.find(x => x.id !== state.usuario.id)?.id
+                        : m.sender_id);
+                    m._plain = otherPub ? await Crypto.decryptDirect(m.contenido, otherPub) : null;
+                }
+            } catch { m._plain = null; }
+        }
+
         const zona = $("#zona-mensajes");
         const estabaAbajo = zona.scrollHeight - zona.scrollTop - zona.clientHeight < 80;
         const scrollPrevio = zona.scrollTop;
@@ -434,7 +454,13 @@
                 }
             });
         } else {
-            texto.textContent = m.contenido ?? "";
+            if (m.cifrado && m._plain === null) {
+                texto.textContent = "[no se puede descifrar en este dispositivo]";
+                texto.style.fontStyle = "italic";
+                texto.style.opacity = "0.6";
+            } else {
+                texto.textContent = (m.cifrado ? m._plain : m.contenido) ?? "";
+            }
         }
         bubble.appendChild(texto);
 
@@ -529,12 +555,49 @@
         if (!contenido || !state.chatActual) return;
 
         const chatId = state.chatActual.id;
+        const esGrupo = state.chatActual.tipo === "GRUPO";
+
         try {
             if (state.editando) {
-                await api("PUT", `api/mensajes/${state.editando.id}`, { contenido });
+                // Edición: cifrar igual que al enviar
+                let payload = contenido;
+                let cifrado = false;
+                if (esGrupo) {
+                    const gk = await getGroupKey(chatId);
+                    if (gk) { payload = await Crypto.encryptGroup(contenido, gk); cifrado = true; }
+                } else {
+                    // 1:1: necesitamos la pub del otro miembro
+                    const otro = state.miembros?.find(m => m.id !== state.usuario.id);
+                    if (otro) {
+                        const pub = await getPubKey(otro.id);
+                        if (pub) { payload = await Crypto.encryptDirect(contenido, pub); cifrado = true; }
+                    }
+                }
+                await api("PUT", `api/mensajes/${state.editando.id}`, { contenido: payload, cifrado });
                 cancelarEdicion();
             } else {
-                await api("POST", "api/mensajes/enviar", { chatId, contenido, tipo: "TEXTO" });
+                let payload = contenido;
+                let cifrado = false;
+                if (esGrupo) {
+                    const gk = await getGroupKey(chatId);
+                    if (gk) { payload = await Crypto.encryptGroup(contenido, gk); cifrado = true; }
+                } else {
+                    const otro = state.miembros?.find(m => m.id !== state.usuario.id);
+                    if (!otro) {
+                        // cargar miembros si no los tenemos aún
+                        const ms = await api("GET", `api/chats/${chatId}/miembros`);
+                        state.miembros = ms;
+                    }
+                    const otroM = state.miembros?.find(m => m.id !== state.usuario.id);
+                    if (otroM) {
+                        const pub = await getPubKey(otroM.id);
+                        if (pub) { payload = await Crypto.encryptDirect(contenido, pub); cifrado = true; }
+                    }
+                    await api("POST", "api/mensajes/enviar", { chatId, contenido: payload, tipo: "TEXTO", cifrado });
+                }
+                if (esGrupo) {
+                    await api("POST", "api/mensajes/enviar", { chatId, contenido: payload, tipo: "TEXTO", cifrado });
+                }
             }
             input.value = "";
             actualizarBotonEnviar();
@@ -801,6 +864,12 @@
                 tipo: "GRUPO",
                 usuarios: [state.usuario.id, ...state.seleccionGrupo]
             });
+            // Cargar miembros recién creados para distribuir la clave
+            const todosIds = [state.usuario.id, ...state.seleccionGrupo];
+            const miembrosParaClave = todosIds.map(id => ({ id }));
+            await distribuirClaveGrupo(chat.id, miembrosParaClave).catch(e =>
+                console.warn("distribuirClaveGrupo (crear):", e)
+            );
             cerrarOverlays();
             await cargarChats();
             const creado = state.chats.find(c => c.id === chat.id) || { id: chat.id, nombre };
@@ -881,6 +950,11 @@
                             usuarioId: m.id
                         });
                         state.miembros = state.miembros.filter(x => x.id !== m.id);
+                        // Rotar clave de grupo
+                        delete state.groupKeys[state.chatActual.id];
+                        const miembrosRestantes = state.miembros.filter(x => x.id !== m.id);
+                        await distribuirClaveGrupo(state.chatActual.id, miembrosRestantes)
+                            .catch(e => console.warn("distribuirClaveGrupo (eliminar):", e));
                         renderMiembros();
                     } catch (e) {
                         $("#ginfo-error").textContent = e.message;
@@ -936,6 +1010,11 @@
                         chatId: state.chatActual.id,
                         usuarioId: u.id
                     });
+                    // Rotar clave de grupo (antes de push para que [...state.miembros, {id}] no duplique)
+                    delete state.groupKeys[state.chatActual.id]; // invalidar caché
+                    const miembrosActualizados = [...state.miembros, { id: u.id }];
+                    await distribuirClaveGrupo(state.chatActual.id, miembrosActualizados)
+                        .catch(e => console.warn("distribuirClaveGrupo (agregar):", e));
                     state.miembros.push({ id: u.id, nombre: u.nombre, email: u.email, rol: "MIEMBRO" });
                     renderMiembros();
                     renderListaAgregar();
@@ -1012,6 +1091,51 @@
         document.querySelectorAll(".overlay").forEach(o => o.hidden = true);
     }
 
+    // ───────── E2E helpers ─────────
+    async function getPubKey(userId) {
+        if (state.pubKeyCache[userId]) return state.pubKeyCache[userId];
+        try {
+            const res = await api("GET", `api/usuarios/${userId}/clave-publica`);
+            const key = typeof res === "string" ? JSON.parse(res).clavePub : res.clavePub;
+            if (key) state.pubKeyCache[userId] = key;
+            return key || null;
+        } catch { return null; }
+    }
+
+    async function getGroupKey(chatId) {
+        if (state.groupKeys[chatId]) return state.groupKeys[chatId];
+        try {
+            const res = await api("GET", `api/chats/${chatId}/clave-grupo`);
+            const data = typeof res === "string" ? JSON.parse(res) : res;
+            if (!data || !data.claveEnvuelta) return null;
+            const distribPub = await getPubKey(data.distribuidorId);
+            if (!distribPub) return null;
+            const ck = await Crypto.unwrapGroupKey(data.claveEnvuelta, distribPub);
+            if (ck) state.groupKeys[chatId] = ck;
+            return ck;
+        } catch { return null; }
+    }
+
+    async function distribuirClaveGrupo(chatId, miembros) {
+        const gk = await Crypto.generateGroupKey();
+        state.groupKeys[chatId] = gk;
+
+        const version = Date.now(); // número único creciente, suficiente para el proyecto
+        const envueltas = [];
+        for (const m of miembros) {
+            const pub = await getPubKey(m.id);
+            if (!pub) continue;
+            const claveEnvuelta = await Crypto.wrapGroupKey(gk, pub);
+            envueltas.push({ miembroId: m.id, claveEnvuelta });
+        }
+
+        await api("PUT", `api/chats/${chatId}/clave-grupo`, {
+            version,
+            distribuidorId: state.usuario.id,
+            envueltas
+        });
+    }
+
     // ───────── Arranque ─────────
     function entrarApp() {
         $("#vista-login").hidden = true;
@@ -1038,6 +1162,9 @@
         $("#panel-chat").hidden = true;
         $("#panel-vacio").hidden = false;
 
+        if (state.usuario.rol !== "ADMIN") {
+            Crypto.ensureKeyPair(api).catch(e => console.warn("ensureKeyPair:", e));
+        }
         cargarChats();
         conectarWs();
     }
