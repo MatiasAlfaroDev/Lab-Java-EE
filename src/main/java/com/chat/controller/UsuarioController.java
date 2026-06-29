@@ -238,9 +238,12 @@ public class UsuarioController {
             String clavePub = body.get("clavePub");
             usuarioService.guardarPublicKey(userId.intValue(), clavePub);
             return Response.ok().build();
-        } catch (Exception e) {
+        } catch (IllegalArgumentException e) {
             return Response.status(Response.Status.BAD_REQUEST)
                            .entity(e.getMessage()).build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.UNAUTHORIZED)
+                           .entity("Token inválido").build();
         }
     }
 
