@@ -443,7 +443,36 @@
         texto.className = "bubble-texto" + (m.eliminado ? " eliminado" : "");
         if (m.eliminado) {
             texto.textContent = "Mensaje eliminado";
+        } else if ((m.tipo === "ARCHIVO" || m.tipo === "IMAGEN" || m.tipo === "VIDEO") && m.cifrado) {
+            // Adjunto cifrado: el contenido descifrado es JSON con { url, fileKeyB64, mimeType, fileName }
+            const parsed = m._plain ? (() => { try { return JSON.parse(m._plain); } catch { return null; } })() : null;
+            if (parsed) {
+                texto.textContent = `🔒📎 ${parsed.fileName}`;
+                texto.style.cursor = "pointer";
+                texto.addEventListener("click", async () => {
+                    try {
+                        const res = await fetch(`api/mensajes/adjunto/${parsed.url}`, {
+                            headers: { Authorization: state.token }
+                        });
+                        if (!res.ok) throw new Error("Error al descargar");
+                        const encBlob = await res.blob();
+                        const ciphertextB64 = await new Promise((resolve) => {
+                            const reader = new FileReader();
+                            reader.onload = () => resolve(reader.result.split(",")[1]);
+                            reader.readAsDataURL(encBlob);
+                        });
+                        const decBlob = await Crypto.decryptFile(ciphertextB64, parsed.fileKeyB64);
+                        if (!decBlob) { alert("No se pudo descifrar el archivo"); return; }
+                        const typedBlob = new Blob([await decBlob.arrayBuffer()], { type: parsed.mimeType });
+                        const url = URL.createObjectURL(typedBlob);
+                        window.open(url, "_blank");
+                    } catch (e) { alert(e.message); }
+                });
+            } else {
+                texto.textContent = "[adjunto no descifrable]";
+            }
         } else if (m.tipo === "ARCHIVO" && m.adjunto) {
+            // Legacy: adjunto sin cifrar
             texto.textContent = `📎 ${m.adjunto.nombreArchivo}`;
             texto.style.cursor = "pointer";
             texto.addEventListener("click", async () => {
@@ -609,31 +638,18 @@
     }
 
     async function subirAdjunto(file) {
+        // Cifrar el archivo
+        const { ciphertextB64, fileKeyB64 } = await Crypto.encryptFile(file);
 
-        const base64 = await new Promise((resolve, reject) => {
-
-            const reader = new FileReader();
-
-            reader.onload = () => {
-
-                resolve(reader.result.split(",")[1]);
-
-            };
-
-            reader.onerror = reject;
-
-            reader.readAsDataURL(file);
-
+        // Subir ciphertext como si fuera el archivo (el servidor solo ve bytes)
+        const resp = await api("POST", "api/mensajes/upload", {
+            nombreArchivo: "encrypted",
+            mimeType: "application/octet-stream",
+            contenidoBase64: ciphertextB64
         });
 
-        return api("POST", "api/mensajes/upload", {
-
-            nombreArchivo: file.name,
-            mimeType: file.type,
-            contenidoBase64: base64
-
-        });
-
+        // Devolver metadata para que el llamador construya el mensaje cifrado
+        return { url: resp.urlArchivo, fileKeyB64, mimeType: file.type, fileName: file.name };
     }
 
     async function abrirAdjunto(adjunto) {
@@ -1351,27 +1367,48 @@
         });
         $("#input-adjunto").addEventListener("change", async (ev) => {
             const file = ev.target.files[0];
-            if (!file || !state.chatActual) {
-                return;
-            }
+            ev.target.value = ""; // reset para permitir subir el mismo archivo de nuevo
+            if (!file || !state.chatActual) return;
             try {
-                const archivo = await subirAdjunto(file);
+                const { url, fileKeyB64, mimeType, fileName } = await subirAdjunto(file);
+                const chatId = state.chatActual.id;
+                const esGrupo = state.chatActual.tipo === "GRUPO";
+
+                const plaintext = JSON.stringify({ url, fileKeyB64, mimeType, fileName });
+                let payload = plaintext;
+                let cifrado = false;
+
+                if (esGrupo) {
+                    const gk = await getGroupKey(chatId);
+                    if (gk) { payload = await Crypto.encryptGroup(plaintext, gk); cifrado = true; }
+                } else {
+                    if (!state.miembros || !state.miembros.length) {
+                        state.miembros = await api("GET", `api/chats/${chatId}/miembros`);
+                    }
+                    const otro = state.miembros?.find(m => m.id !== state.usuario.id);
+                    if (otro) {
+                        const pub = await getPubKey(otro.id);
+                        if (pub) { payload = await Crypto.encryptDirect(plaintext, pub); cifrado = true; }
+                    }
+                }
+
+                const tipo = mimeType.startsWith("image/") ? "IMAGEN"
+                           : mimeType.startsWith("video/") ? "VIDEO"
+                           : "ARCHIVO";
+
                 await api("POST", "api/mensajes/enviar", {
-
-                    chatId: state.chatActual.id,
-                    contenido: archivo.urlArchivo,
-                    tipo: "ARCHIVO",
-                    nombreArchivo: archivo.nombreArchivo,
-                    tamanoArchivo: archivo.tamanoArchivo,
-                    mimeType: file.type
-
+                    chatId,
+                    contenido: payload,
+                    tipo,
+                    cifrado,
+                    nombreArchivo: fileName,
+                    tamanoArchivo: file.size,
+                    mimeType: "application/octet-stream"
                 });
-                await cargarMensajes(state.chatActual.id);
+                await cargarMensajes(chatId);
                 cargarChats();
             } catch (e) {
                 alert("Error enviando archivo: " + e.message);
-            } finally {
-                ev.target.value = "";
             }
         });
         document.addEventListener("click", (ev) => {
