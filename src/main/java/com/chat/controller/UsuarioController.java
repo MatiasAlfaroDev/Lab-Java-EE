@@ -227,4 +227,38 @@ public class UsuarioController {
         }
     }
 
+    @PUT
+    @Path("/clave-publica")
+    public Response guardarClavePub(
+        java.util.Map<String, String> body,
+        @HeaderParam("Authorization") String token
+    ) {
+        try {
+            Long userId = tokenService.validarToken(token);
+            String clavePub = body.get("clavePub");
+            usuarioService.guardarPublicKey(userId.intValue(), clavePub);
+            return Response.ok().build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                           .entity(e.getMessage()).build();
+        }
+    }
+
+    @GET
+    @Path("/{id}/clave-publica")
+    public Response obtenerClavePub(
+        @PathParam("id") int id,
+        @HeaderParam("Authorization") String token
+    ) {
+        try {
+            tokenService.validarToken(token);
+            String key = usuarioService.obtenerPublicKey(id);
+            if (key == null) return Response.ok("{}").build();
+            return Response.ok("{\"clavePub\":\"" + key + "\"}").build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.UNAUTHORIZED)
+                           .entity("Token inválido").build();
+        }
+    }
+
 }

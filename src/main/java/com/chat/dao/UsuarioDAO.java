@@ -71,4 +71,17 @@ public class UsuarioDAO {
         .setParameter("token", pushToken)
         .executeUpdate();
     }
-} 
+
+    @Transactional
+    public void guardarPublicKey(int usuarioId, String publicKey) {
+        em.createQuery("UPDATE Usuario u SET u.publicKey = :key WHERE u.id = :id")
+          .setParameter("key", publicKey)
+          .setParameter("id", usuarioId)
+          .executeUpdate();
+    }
+
+    public String buscarPublicKey(int usuarioId) {
+        Usuario u = em.find(Usuario.class, usuarioId);
+        return u != null ? u.getPublicKey() : null;
+    }
+}

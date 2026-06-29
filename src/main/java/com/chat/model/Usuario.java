@@ -38,6 +38,9 @@ public class Usuario {
     @Column(name = "push_token", length = 255)
     private String pushToken;
 
+    @Column(name = "public_key", columnDefinition = "text")
+    private String publicKey;
+
     @Column(nullable = false)
     private boolean bloqueado = false;
 
@@ -74,5 +77,8 @@ public class Usuario {
 
     public boolean isBloqueado() { return bloqueado; }
     public void setBloqueado(boolean bloqueado) { this.bloqueado = bloqueado;}
-    
+
+    public String getPublicKey() { return publicKey; }
+    public void setPublicKey(String publicKey) { this.publicKey = publicKey; }
+
 }

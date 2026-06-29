@@ -172,4 +172,14 @@ public class UsuarioService {
         usuarioDAO.actualizar(usuario);
     }
 
+    public void guardarPublicKey(int usuarioId, String publicKey) {
+        if (publicKey == null || publicKey.isBlank())
+            throw new IllegalArgumentException("Clave inválida");
+        usuarioDAO.guardarPublicKey(usuarioId, publicKey);
+    }
+
+    public String obtenerPublicKey(int usuarioId) {
+        return usuarioDAO.buscarPublicKey(usuarioId);
+    }
+
 }
