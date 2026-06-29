@@ -388,6 +388,29 @@
         return icon;
     }
 
+    async function obtenerUrlImagen(adjunto) {
+
+        console.log("Adjunto:", adjunto);
+        const res = await fetch(
+            `api/mensajes/adjunto/${adjunto.urlArchivo}`,
+            {
+                headers: {
+                    Authorization: state.token
+                }
+            }
+        );
+        
+        console.log("Status:", res.status);
+        
+        if (!res.ok) {
+            throw new Error("No se pudo descargar la imagen");
+        }
+
+        const blob = await res.blob();
+        console.log("Blob:", blob);
+        return URL.createObjectURL(blob);
+    }
+
     function renderMensaje(m) {
         const esMio = m.sender_id === state.usuario.id;
 
@@ -424,19 +447,86 @@
         if (m.eliminado) {
             texto.textContent = "Mensaje eliminado";
         } else if (m.tipo === "ARCHIVO" && m.adjunto) {
-            texto.textContent = `📎 ${m.adjunto.nombreArchivo}`;
-            texto.style.cursor = "pointer";
-            texto.addEventListener("click", async () => {
-                try {
-                    await abrirAdjunto(m.adjunto);
-                } catch (e) {
-                    alert(e.message);
-                }
-            });
+
+            const nombre = m.adjunto.nombreArchivo.toLowerCase();
+
+            const esImagen =
+                nombre.endsWith(".jpg") ||
+                nombre.endsWith(".jpeg") ||
+                nombre.endsWith(".png") ||
+                nombre.endsWith(".webp") ||
+                nombre.endsWith(".gif");
+
+            const esVideo =
+                nombre.endsWith(".mp4") ||
+                nombre.endsWith(".mov") ||
+                nombre.endsWith(".avi") ||
+                nombre.endsWith(".mkv");
+
+            if (esImagen) {
+                
+                const img = document.createElement("img");
+
+                img.className = "bubble-image";
+
+                obtenerUrlImagen(m.adjunto)
+                    .then(url => {
+                        img.src = url;
+                    })
+                    .catch(console.error);
+
+                img.addEventListener("click", async () => {
+                    try {
+                        await abrirAdjunto(m.adjunto);
+                    } catch (e) {
+                        alert(e.message);
+                    }
+                });
+
+                bubble.appendChild(img);
+
+            } else if (esVideo) {
+
+                const video = document.createElement("div");
+
+                video.className = "bubble-video";
+
+                video.innerHTML = `
+                    <ion-icon name="play-circle" class="video-icon"></ion-icon>
+                    <span>${m.adjunto.nombreArchivo}</span>
+                `;
+
+                video.addEventListener("click", async () => {
+                    try {
+                        await abrirAdjunto(m.adjunto);
+                    } catch (e) {
+                        alert(e.message);
+                    }
+                });
+
+                bubble.appendChild(video);
+
+            } else {
+
+                texto.textContent = `📎 ${m.adjunto.nombreArchivo}`;
+                texto.style.cursor = "pointer";
+
+                texto.addEventListener("click", async () => {
+                    try {
+                        await abrirAdjunto(m.adjunto);
+                    } catch (e) {
+                        alert(e.message);
+                    }
+                });
+                 bubble.appendChild(texto);
+            }
         } else {
             texto.textContent = m.contenido ?? "";
         }
-        bubble.appendChild(texto);
+
+        if (!(m.tipo === "ARCHIVO" && m.adjunto)) {
+            bubble.appendChild(texto);
+        }
 
         if (!m.eliminado) {
             const meta = document.createElement("span");
@@ -586,8 +676,36 @@
             throw new Error("No se pudo descargar el archivo");
         }
         const blob = await res.blob();
+
+        const nombre = adjunto.nombreArchivo.toLowerCase();
+
+        const esImagen =
+            nombre.endsWith(".jpg") ||
+            nombre.endsWith(".jpeg") ||
+            nombre.endsWith(".png") ||
+            nombre.endsWith(".webp") ||
+            nombre.endsWith(".gif");
+
+        const esVideo =
+            nombre.endsWith(".mp4") ||
+            nombre.endsWith(".mov") ||
+            nombre.endsWith(".avi") ||
+            nombre.endsWith(".mkv");
+
         const url = URL.createObjectURL(blob);
-        window.open(url, "_blank");
+
+        if (esImagen || esVideo) {
+
+            window.open(url, "_blank");
+
+        } else {
+
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = adjunto.nombreArchivo;
+            a.click();
+
+        }
     }
 
     function iniciarEdicion(m) {

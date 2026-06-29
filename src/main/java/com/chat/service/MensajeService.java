@@ -201,7 +201,8 @@ public class MensajeService {
                 dto.adjunto = new UploadAdjuntoResponse(
                     adjunto.getUrlArchivo(),
                     adjunto.getNombreArchivo(),
-                    adjunto.getTamanoArchivo()
+                    adjunto.getTamanoArchivo(),
+                    adjunto.getMimeType()
                 );
             }
             dto.sent_at =

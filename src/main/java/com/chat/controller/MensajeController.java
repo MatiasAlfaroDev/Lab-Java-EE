@@ -405,7 +405,8 @@ public class MensajeController {
                     new UploadAdjuntoResponse(
                             urlArchivo,
                             request.getNombreArchivo(),
-                            (long) bytes.length
+                            (long) bytes.length,
+                            request.getMimeType() 
                     );
 
             return Response.ok(response).build();
