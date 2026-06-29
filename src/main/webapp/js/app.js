@@ -1089,9 +1089,42 @@
             const li = filaPersona({ nombre, email: chat.lastMsg || "" , initials: nombre.slice(0,2).toUpperCase()});
             li.addEventListener("click", async () => {
                 try {
-                    await api("POST", `api/mensajes/${state.reenviarId}/reenviar`, { chatId: chat.id });
+                    // 1. Encontrar el mensaje original en memoria
+                    const original = state.mensajes.find(m => m.id === state.reenviarId);
+                    if (!original) throw new Error("Mensaje no encontrado en pantalla");
+
+                    // 2. Obtener el texto plano (ya descifrado en m._plain, o plano si no era cifrado)
+                    const textoPlano = original.cifrado ? original._plain : original.contenido;
+                    if (textoPlano == null) throw new Error("No se puede descifrar el mensaje original");
+
+                    const chatDestino = chat; // 'chat' viene del closure del for
+                    const esGrupoDestino = chatDestino.tipo === "GRUPO";
+
+                    // 3. Cifrar para el chat destino
+                    let payload = textoPlano;
+                    let cifrado = false;
+                    if (esGrupoDestino) {
+                        const gk = await getGroupKey(chatDestino.id);
+                        if (gk) { payload = await Crypto.encryptGroup(textoPlano, gk); cifrado = true; }
+                    } else {
+                        const ms = await api("GET", `api/chats/${chatDestino.id}/miembros`);
+                        const otro = ms.find(m => m.id !== state.usuario.id);
+                        if (otro) {
+                            const pub = await getPubKey(otro.id);
+                            if (pub) { payload = await Crypto.encryptDirect(textoPlano, pub); cifrado = true; }
+                        }
+                    }
+
+                    // 4. Enviar como mensaje normal (el servidor lo ve como un mensaje nuevo)
+                    await api("POST", "api/mensajes/enviar", {
+                        chatId: chatDestino.id,
+                        contenido: payload,
+                        tipo: original.tipo || "TEXTO",
+                        cifrado
+                    });
+
                     $("#modal-reenviar").hidden = true;
-                    if (state.chatActual?.id === chat.id) await cargarMensajes(chat.id);
+                    if (state.chatActual?.id === chatDestino.id) await cargarMensajes(chatDestino.id);
                     cargarChats();
                 } catch (e) {
                     $("#reenviar-error").textContent = e.message;
