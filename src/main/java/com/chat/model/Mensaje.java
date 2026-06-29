@@ -55,6 +55,9 @@ public class Mensaje {
     @Column(nullable = false)
     private boolean eliminado;
 
+    @Column(nullable = false)
+    private boolean cifrado;
+
     @OneToMany(
     mappedBy = "mensaje",
     cascade = CascadeType.ALL,
@@ -96,6 +99,9 @@ public class Mensaje {
     
     public boolean isEliminado() { return eliminado; }
     public void setEliminado(boolean eliminado) { this.eliminado = eliminado; }
+
+    public boolean isCifrado() { return cifrado; }
+    public void setCifrado(boolean cifrado) { this.cifrado = cifrado; }
 
     public TipoMensaje getTipo() { return tipo; }
     public void setTipo(TipoMensaje tipo) { this.tipo = tipo; }

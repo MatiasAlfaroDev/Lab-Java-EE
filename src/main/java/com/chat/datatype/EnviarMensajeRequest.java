@@ -57,4 +57,9 @@ public class EnviarMensajeRequest {
         this.mimeType = mimeType;
     }
 
+    private boolean cifrado;
+
+    public boolean isCifrado() { return cifrado; }
+    public void setCifrado(boolean cifrado) { this.cifrado = cifrado; }
+
 }

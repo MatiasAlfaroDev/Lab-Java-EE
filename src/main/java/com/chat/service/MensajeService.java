@@ -43,7 +43,7 @@ public class MensajeService {
 
 
     @Transactional
-    public void enviarMensaje(int chatId, int userId, String contenido, TipoMensaje tipo, String nombreArchivo, Long tamanoArchivo, String mimeType) {
+    public void enviarMensaje(int chatId, int userId, String contenido, TipoMensaje tipo, String nombreArchivo, Long tamanoArchivo, String mimeType, boolean cifrado) {
 
         // 1. validaciones
         Chat chat = chatDAO.buscarPorId(chatId);
@@ -69,6 +69,7 @@ public class MensajeService {
         mensaje.setContenido(contenido);
         mensaje.setTipo(tipo);
         mensaje.setEstado(EstadoMensaje.ENVIADO);
+        mensaje.setCifrado(cifrado);
 
         // 3. guardar
         mensajeDAO.guardar(mensaje);
@@ -157,10 +158,11 @@ public class MensajeService {
                 !receptor.getPushToken().isBlank()
             ) {
 
+                String pushBody = cifrado ? "Nuevo mensaje" : contenido;
                 pushNotificationService.enviarPush(
                     receptor.getPushToken(),
                     usuario.getNombre(),
-                    contenido
+                    pushBody
                 );
 
                 System.out.println(
@@ -221,6 +223,7 @@ public class MensajeService {
             return dtoR;
             }).toList();
             dto.mensajeOrigenId = m.getMensajeOrigen() != null ? m.getMensajeOrigen().getId() : 0;
+            dto.cifrado = m.isCifrado();
             return dto;
         }).toList();
     }

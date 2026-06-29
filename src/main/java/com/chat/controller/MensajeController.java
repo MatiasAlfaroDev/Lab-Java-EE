@@ -83,7 +83,8 @@ public class MensajeController {
                     tipo,
                     request.getNombreArchivo(),
                     request.getTamanoArchivo(),
-                    request.getMimeType()
+                    request.getMimeType(),
+                    request.isCifrado()
             );
 
             return Response.ok("Mensaje enviado").build();

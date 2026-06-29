@@ -15,6 +15,7 @@
         <class>com.chat.model.MensajeUsuario</class>
         <class>com.chat.model.ReaccionMensaje</class>
         <class>com.chat.model.Adjunto</class>
+        <class>com.chat.model.ClaveGrupo</class>
 
         <exclude-unlisted-classes>true</exclude-unlisted-classes>
 

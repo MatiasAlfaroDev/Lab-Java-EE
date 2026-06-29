@@ -20,4 +20,5 @@ public class MensajeResponse {
     public List<ReaccionDTO> reacciones;
     public int mensajeOrigenId;
     public UploadAdjuntoResponse adjunto;
+    public boolean cifrado;
 }
