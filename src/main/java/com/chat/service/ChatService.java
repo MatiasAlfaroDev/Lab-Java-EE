@@ -164,7 +164,41 @@ public class ChatService {
 
     public String obtenerUltimoMensaje(int chatId) {
 
-        return chatDAO.obtenerUltimoMensaje(chatId);
+        Mensaje mensaje =
+            chatDAO.obtenerUltimoMensajeChat(chatId);
+
+        if (mensaje == null) {
+            return "";
+        }
+
+        switch (mensaje.getTipo()) {
+
+            case IMAGEN:
+                return "📷 Imagen";
+
+            case VIDEO:
+                return "🎥 Video";
+
+        
+            case AUDIO:
+                return "🎤 Audio";
+
+            case ARCHIVO:
+                if (!mensaje.getAdjuntos().isEmpty()) {
+                    return "📎 " +
+                            mensaje.getAdjuntos()
+                                .get(0)
+                                .getNombreArchivo();
+                }
+                return "📎 Archivo";
+
+            case ENCUESTA:
+                return "📊 Encuesta";
+
+            case TEXTO:
+            default:
+                return mensaje.getContenido();
+        }
     }
 
     public List<ChatDTO> obtenerChatsDTO(Long userId) {
@@ -173,6 +207,18 @@ public class ChatService {
             chatDAO.obtenerChatsPorUsuario(
                 userId.intValue()
             );
+
+            chats.sort((c1, c2) -> {
+
+            Mensaje m1 = mensajeDAO.obtenerUltimoMensaje(c1.getChatId());
+            Mensaje m2 = mensajeDAO.obtenerUltimoMensaje(c2.getChatId());
+
+            if (m1 == null && m2 == null) return 0;
+            if (m1 == null) return 1;
+            if (m2 == null) return -1;
+
+            return m2.getFechaEnviado().compareTo(m1.getFechaEnviado());
+        });
 
          return chats.stream().map(chat -> {
 

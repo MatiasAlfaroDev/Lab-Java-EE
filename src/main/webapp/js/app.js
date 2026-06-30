@@ -50,6 +50,12 @@
     };
 
     // utils/fecha.ts
+    const formatDuracion = (s) => {
+        const m = Math.floor((s || 0) / 60);
+        const sec = Math.floor((s || 0) % 60);
+        return `${m}:${sec.toString().padStart(2, "0")}`;
+    };
+
     const horaCorta = (iso) => {
         const d = new Date(iso);
         if (isNaN(d)) return "";
@@ -408,6 +414,29 @@
         return icon;
     }
 
+    async function obtenerUrlImagen(adjunto) {
+
+        console.log("Adjunto:", adjunto);
+        const res = await fetch(
+            `api/mensajes/adjunto/${adjunto.urlArchivo}`,
+            {
+                headers: {
+                    Authorization: state.token
+                }
+            }
+        );
+        
+        console.log("Status:", res.status);
+        
+        if (!res.ok) {
+            throw new Error("No se pudo descargar la imagen");
+        }
+
+        const blob = await res.blob();
+        console.log("Blob:", blob);
+        return URL.createObjectURL(blob);
+    }
+
     function renderMensaje(m) {
         const esMio = m.sender_id === state.usuario.id;
 
@@ -444,16 +473,13 @@
         if (m.eliminado) {
             texto.textContent = "Mensaje eliminado";
         } else if ((m.tipo === "ARCHIVO" || m.tipo === "IMAGEN" || m.tipo === "VIDEO") && m.cifrado) {
-            // Adjunto cifrado: el contenido descifrado es JSON con { url, fileKeyB64, mimeType, fileName }
             const parsed = m._plain ? (() => { try { return JSON.parse(m._plain); } catch { return null; } })() : null;
             if (parsed) {
                 texto.textContent = `🔒📎 ${parsed.fileName}`;
                 texto.style.cursor = "pointer";
                 texto.addEventListener("click", async () => {
                     try {
-                        const res = await fetch(`api/mensajes/adjunto/${parsed.url}`, {
-                            headers: { Authorization: state.token }
-                        });
+                        const res = await fetch(`api/mensajes/adjunto/${parsed.url}`, { headers: { Authorization: state.token } });
                         if (!res.ok) throw new Error("Error al descargar");
                         const encBlob = await res.blob();
                         const ciphertextB64 = await new Promise((resolve) => {
@@ -462,26 +488,77 @@
                             reader.readAsDataURL(encBlob);
                         });
                         const decBlob = await Crypto.decryptFile(ciphertextB64, parsed.fileKeyB64);
-                        if (!decBlob) { alert("No se pudo descifrar el archivo"); return; }
+                        if (!decBlob) { mostrarToast("No se pudo descifrar el archivo", "error"); return; }
                         const typedBlob = new Blob([await decBlob.arrayBuffer()], { type: parsed.mimeType });
-                        const url = URL.createObjectURL(typedBlob);
-                        window.open(url, "_blank");
-                    } catch (e) { alert(e.message); }
+                        window.open(URL.createObjectURL(typedBlob), "_blank");
+                    } catch (e) { mostrarToast(e.message, "error"); }
                 });
             } else {
                 texto.textContent = "[adjunto no descifrable]";
             }
-        } else if (m.tipo === "ARCHIVO" && m.adjunto) {
-            // Legacy: adjunto sin cifrar
-            texto.textContent = `📎 ${m.adjunto.nombreArchivo}`;
-            texto.style.cursor = "pointer";
-            texto.addEventListener("click", async () => {
-                try {
-                    await abrirAdjunto(m.adjunto);
-                } catch (e) {
-                    alert(e.message);
-                }
+        } else if (m.tipo === "AUDIO" && m.adjunto) {
+            const audioDiv = document.createElement("div");
+            audioDiv.className = "bubble-audio";
+            const audio = document.createElement("audio");
+            audio.preload = "metadata";
+            const btnPlay = document.createElement("button");
+            btnPlay.className = "btn-play-audio";
+            btnPlay.innerHTML = `<ion-icon name="play-circle"></ion-icon>`;
+            const barra = document.createElement("div");
+            barra.className = "audio-barra";
+            const progreso = document.createElement("div");
+            progreso.className = "audio-progreso";
+            barra.appendChild(progreso);
+            const durLabel = document.createElement("span");
+            durLabel.className = "audio-duracion";
+            durLabel.textContent = "0:00";
+            fetch(`api/mensajes/adjunto/${m.adjunto.urlArchivo}`, { headers: { Authorization: state.token } })
+                .then(r => r.blob()).then(blob => { audio.src = URL.createObjectURL(blob); });
+            audio.addEventListener("loadedmetadata", () => { durLabel.textContent = formatDuracion(audio.duration); });
+            audio.addEventListener("timeupdate", () => {
+                const pct = audio.duration ? (audio.currentTime / audio.duration) * 100 : 0;
+                progreso.style.width = pct + "%";
+                durLabel.textContent = formatDuracion(audio.currentTime);
             });
+            audio.addEventListener("ended", () => {
+                btnPlay.innerHTML = `<ion-icon name="play-circle"></ion-icon>`;
+                progreso.style.width = "0%";
+            });
+            btnPlay.addEventListener("click", () => {
+                if (audio.paused) { audio.play(); btnPlay.innerHTML = `<ion-icon name="pause-circle"></ion-icon>`; }
+                else { audio.pause(); btnPlay.innerHTML = `<ion-icon name="play-circle"></ion-icon>`; }
+            });
+            audioDiv.appendChild(btnPlay);
+            audioDiv.appendChild(barra);
+            audioDiv.appendChild(durLabel);
+            bubble.appendChild(audioDiv);
+        } else if ((m.tipo === "ARCHIVO" || m.tipo === "IMAGEN" || m.tipo === "VIDEO") && m.adjunto) {
+            const esImagen = m.tipo === "IMAGEN";
+            const esVideo = m.tipo === "VIDEO";
+            if (esImagen) {
+                const img = document.createElement("img");
+                img.className = "bubble-image";
+                obtenerUrlImagen(m.adjunto).then(url => { img.src = url; }).catch(console.error);
+                img.addEventListener("click", async () => {
+                    try { await abrirAdjunto(m.adjunto); } catch (e) { mostrarToast(e.message, "error"); }
+                });
+                bubble.appendChild(img);
+            } else if (esVideo) {
+                const video = document.createElement("div");
+                video.className = "bubble-video";
+                video.innerHTML = `<ion-icon name="play-circle" class="video-icon"></ion-icon><span>${m.adjunto.nombreArchivo}</span>`;
+                video.addEventListener("click", async () => {
+                    try { await abrirAdjunto(m.adjunto); } catch (e) { mostrarToast(e.message, "error"); }
+                });
+                bubble.appendChild(video);
+            } else {
+                texto.textContent = `📎 ${m.adjunto.nombreArchivo}`;
+                texto.style.cursor = "pointer";
+                texto.addEventListener("click", async () => {
+                    try { await abrirAdjunto(m.adjunto); } catch (e) { mostrarToast(e.message, "error"); }
+                });
+                bubble.appendChild(texto);
+            }
         } else {
             if (m.cifrado && m._plain === null) {
                 texto.textContent = "[no se puede descifrar en este dispositivo]";
@@ -491,7 +568,10 @@
                 texto.textContent = (m.cifrado ? m._plain : m.contenido) ?? "";
             }
         }
-        bubble.appendChild(texto);
+
+        if (!m.adjunto || m.cifrado) {
+            bubble.appendChild(texto);
+        }
 
         if (!m.eliminado) {
             const meta = document.createElement("span");
@@ -540,6 +620,8 @@
 
     // ───────── Menú de mensaje (overlay centrado, como Expo) ─────────
     function abrirMenuMensaje(m, esMio) {
+            console.log("TIPO:", m.tipo);
+    console.log("MENSAJE:", m);
         state.menuMensaje = m;
         const box = $("#menu-mensaje-box");
         box.innerHTML = "";
@@ -563,7 +645,7 @@
             box.appendChild(b);
         };
 
-        if (esMio) item("Editar", () => iniciarEdicion(m));
+        if (esMio && m.tipo === 'TEXTO') item("Editar", () => iniciarEdicion(m));
         item("Eliminar para mí", () => eliminarParaMi(m.id), true);
         if (esMio) item("Eliminar para todos", () => eliminarParaTodos(m.id), true);
         item("Reenviar", () => abrirModalReenviar(m.id));
@@ -644,18 +726,17 @@
     }
 
     async function subirAdjunto(file) {
-        // Cifrar el archivo
-        const { ciphertextB64, fileKeyB64 } = await Crypto.encryptFile(file);
-
-        // Subir ciphertext como si fuera el archivo (el servidor solo ve bytes)
-        const resp = await api("POST", "api/mensajes/upload", {
-            nombreArchivo: "encrypted",
-            mimeType: "application/octet-stream",
-            contenidoBase64: ciphertextB64
+        const base64 = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result.split(",")[1]);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
         });
-
-        // Devolver metadata para que el llamador construya el mensaje cifrado
-        return { url: resp.urlArchivo, fileKeyB64, mimeType: file.type, fileName: file.name };
+        return api("POST", "api/mensajes/upload", {
+            nombreArchivo: file.name,
+            mimeType: file.type,
+            contenidoBase64: base64
+        });
     }
 
     async function abrirAdjunto(adjunto) {
@@ -671,8 +752,36 @@
             throw new Error("No se pudo descargar el archivo");
         }
         const blob = await res.blob();
+
+        const nombre = adjunto.nombreArchivo.toLowerCase();
+
+        const esImagen =
+            nombre.endsWith(".jpg") ||
+            nombre.endsWith(".jpeg") ||
+            nombre.endsWith(".png") ||
+            nombre.endsWith(".webp") ||
+            nombre.endsWith(".gif");
+
+        const esVideo =
+            nombre.endsWith(".mp4") ||
+            nombre.endsWith(".mov") ||
+            nombre.endsWith(".avi") ||
+            nombre.endsWith(".mkv");
+
         const url = URL.createObjectURL(blob);
-        window.open(url, "_blank");
+
+        if (esImagen || esVideo) {
+
+            window.open(url, "_blank");
+
+        } else {
+
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = adjunto.nombreArchivo;
+            a.click();
+
+        }
     }
 
     function iniciarEdicion(m) {
@@ -1409,51 +1518,25 @@
         });
         $("#input-adjunto").addEventListener("change", async (ev) => {
             const file = ev.target.files[0];
-            ev.target.value = ""; // reset para permitir subir el mismo archivo de nuevo
+            ev.target.value = "";
             if (!file || !state.chatActual) return;
             try {
-                const { url, fileKeyB64, mimeType, fileName } = await subirAdjunto(file);
-                const chatId = state.chatActual.id;
-                const esGrupo = state.chatActual.tipo === "GRUPO";
-
-                const plaintext = JSON.stringify({ url, fileKeyB64, mimeType, fileName });
-                let payload = plaintext;
-                let cifrado = false;
-
-                if (esGrupo) {
-                    const gk = await getGroupKey(chatId);
-                    if (gk) { payload = await Crypto.encryptGroup(plaintext, gk); cifrado = true; }
-                } else {
-                    if (!state.miembros || !state.miembros.length) {
-                        state.miembros = await api("GET", `api/chats/${chatId}/miembros`);
-                    }
-                    const otro = state.miembros?.find(m => m.id !== state.usuario.id);
-                    if (otro) {
-                        const pub = await getPubKey(otro.id);
-                        if (pub) { payload = await Crypto.encryptDirect(plaintext, pub); cifrado = true; }
-                    }
-                }
-
-                const tipo = mimeType.startsWith("image/") ? "IMAGEN"
-                           : mimeType.startsWith("video/") ? "VIDEO"
-                           : "ARCHIVO";
-
-                if (!cifrado) {
-                    throw new Error("No se puede cifrar: destinatario sin clave E2E registrada");
-                }
+                const archivo = await subirAdjunto(file);
                 await api("POST", "api/mensajes/enviar", {
-                    chatId,
-                    contenido: payload,
-                    tipo,
-                    cifrado,
-                    nombreArchivo: fileName,
-                    tamanoArchivo: file.size,
-                    mimeType: "application/octet-stream"
+                    chatId: state.chatActual.id,
+                    contenido: archivo.urlArchivo,
+                    tipo: file.type.startsWith("image/") ? "IMAGEN"
+                        : file.type.startsWith("video/") ? "VIDEO"
+                        : file.type.startsWith("audio/") ? "AUDIO"
+                        : "ARCHIVO",
+                    nombreArchivo: archivo.nombreArchivo,
+                    tamanoArchivo: archivo.tamanoArchivo,
+                    mimeType: file.type
                 });
-                await cargarMensajes(chatId);
+                await cargarMensajes(state.chatActual.id);
                 cargarChats();
             } catch (e) {
-                alert("Error enviando archivo: " + e.message);
+                mostrarToast("Error enviando archivo: " + e.message, "error");
             }
         });
         document.addEventListener("click", (ev) => {

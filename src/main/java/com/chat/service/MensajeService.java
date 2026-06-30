@@ -67,7 +67,19 @@ public class MensajeService {
         mensaje.setChat(chat);
         mensaje.setEmisor(usuario);
         mensaje.setContenido(contenido);
-        mensaje.setTipo(tipo);
+        if (tipo == TipoMensaje.ARCHIVO) {
+            if (mimeType != null && mimeType.startsWith("image/")) {
+                mensaje.setTipo(TipoMensaje.IMAGEN);
+            } else if (mimeType != null && mimeType.startsWith("video/")) {
+                mensaje.setTipo(TipoMensaje.VIDEO);
+            } else if (mimeType != null && mimeType.startsWith("audio/")) {
+                mensaje.setTipo(TipoMensaje.AUDIO);
+            } else {
+                mensaje.setTipo(TipoMensaje.ARCHIVO);
+            }
+        } else {
+            mensaje.setTipo(tipo);
+        }
         mensaje.setEstado(EstadoMensaje.ENVIADO);
         mensaje.setCifrado(cifrado);
 
@@ -77,7 +89,8 @@ public class MensajeService {
 
         if (tipo == TipoMensaje.ARCHIVO
                 || tipo == TipoMensaje.IMAGEN
-                || tipo == TipoMensaje.VIDEO) {
+                || tipo == TipoMensaje.VIDEO
+                || tipo == TipoMensaje.AUDIO) {
 
             Adjunto adjunto = new Adjunto();
 
@@ -203,7 +216,8 @@ public class MensajeService {
                 dto.adjunto = new UploadAdjuntoResponse(
                     adjunto.getUrlArchivo(),
                     adjunto.getNombreArchivo(),
-                    adjunto.getTamanoArchivo()
+                    adjunto.getTamanoArchivo(),
+                    adjunto.getMimeType()
                 );
             }
             dto.sent_at =
@@ -515,6 +529,22 @@ public class MensajeService {
 
         // 3. guardar
         mensajeDAO.guardar(mensaje);
+        em.flush();
+        if (!original.getAdjuntos().isEmpty()) {
+
+            Adjunto originalAdjunto =
+                original.getAdjuntos().get(0);
+
+            Adjunto nuevo = new Adjunto();
+
+            nuevo.setMensajeReferencia(mensaje);
+            nuevo.setNombreArchivo(originalAdjunto.getNombreArchivo());
+            nuevo.setUrlArchivo(originalAdjunto.getUrlArchivo());
+            nuevo.setTamanoArchivo(originalAdjunto.getTamanoArchivo());
+            nuevo.setMimeType(originalAdjunto.getMimeType());
+
+            adjuntoDAO.guardar(nuevo);
+        }
 
         // 4. crear registros MensajeUsuario
         for (MiembroChat miembro : chat.getMiembros()) {

@@ -497,6 +497,10 @@ ion-icon { font-size: 20px; flex-shrink: 0; }
 .bubble-mio .bubble-meta ion-icon { color: rgba(212,226,244,.65); }
 .bubble-meta ion-icon.leido { color: #06692e; }
 
+.bubble-image {width: 220px; max-width: 100%; border-radius: 12px; cursor: pointer; display: block;}
+.bubble-video {width: 220px; height: 180px; background: #222; border-radius: 12px; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; cursor: pointer;}
+.video-icon {font-size: 70px; margin-bottom: 10px;}
+
 .reacciones { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
 .reaccion-chip {
     background: rgba(212,226,244,.1);

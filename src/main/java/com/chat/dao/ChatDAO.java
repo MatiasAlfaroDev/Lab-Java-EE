@@ -159,4 +159,20 @@ public class ChatDAO {
             ? "Mensaje eliminado"
             : ultimo.getContenido();
     }
+
+    public Mensaje obtenerUltimoMensajeChat(int chatId) {
+
+        return em.createQuery("""
+            SELECT DISTINCT m
+            FROM Mensaje m
+            LEFT JOIN FETCH m.adjuntos
+            WHERE m.chat.chatId = :chatId
+            ORDER BY m.fechaEnviado DESC, m.id DESC
+        """, Mensaje.class)
+        .setParameter("chatId", chatId)
+        .setMaxResults(1)
+        .getResultStream()
+        .findFirst()
+        .orElse(null);
+    }
 }
