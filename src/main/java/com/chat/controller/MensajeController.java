@@ -66,13 +66,18 @@ public class MensajeController {
 
             // 3. convertir tipo
             TipoMensaje tipo;
+            System.out.println("===== REQUEST =====");
+            System.out.println("TIPO recibido = [" + request.getTipo() + "]");
+            System.out.println("CONTENIDO = [" + request.getContenido() + "]");
+            System.out.println("===================");
             try {
-                tipo = TipoMensaje.valueOf(request.getTipo());
-            } catch (Exception e) {
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity("Tipo de mensaje inválido")
-                        .build();
-            }
+    tipo = TipoMensaje.valueOf(request.getTipo().trim().toUpperCase());
+} catch (Exception e) {
+    e.printStackTrace();
+    return Response.status(Response.Status.BAD_REQUEST)
+            .entity("Tipo recibido: " + request.getTipo())
+            .build();
+}
 
             System.out.println("MIME TYPE = " + request.getMimeType());
             // 4. llamar service

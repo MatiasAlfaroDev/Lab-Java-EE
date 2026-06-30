@@ -76,7 +76,8 @@ public class MensajeService {
 
         if (tipo == TipoMensaje.ARCHIVO
                 || tipo == TipoMensaje.IMAGEN
-                || tipo == TipoMensaje.VIDEO) {
+                || tipo == TipoMensaje.VIDEO
+                || tipo == TipoMensaje.AUDIO) {
 
             Adjunto adjunto = new Adjunto();
 
