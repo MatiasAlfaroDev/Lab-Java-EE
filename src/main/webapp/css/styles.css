@@ -4,39 +4,65 @@
    ════════════════════════════════════════════════════════════ */
 
 :root {
-    /* Fondos */
-    --bg:          #091525;
-    --panel-bg:    #0D1C30;
-    --sidebar-bg:  #070F1C;
-    --list-bg:     #0A1828;
+    --bg:          #FFFFFF;
+    --panel-bg:    #FFFFFF;
+    --sidebar-bg:  #F2F5F5;
+    --list-bg:     #F7F9F9;
 
-    /* Acento */
-    --accent:      #3B7DFF;
-    --accent-dark: #1D5FD8;
+    --accent:      #1F7A8C;
+    --accent-dark: #19606E;
 
-    /* Texto */
-    --text:        #D4E2F4;
-    --text-muted:  #6B84A0;
+    --text:        #101618;
+    --text-muted:  #5E6E74;
 
-    /* Bordes */
-    --border:      #162540;
+    --border:      #E3E8EA;
 
-    /* Burbujas */
-    --bubble-sent: #1B4AC8;
-    --bubble-recv: #112030;
+    --bubble-sent: #1F7A8C;
+    --bubble-recv: #F1F4F5;
 
-    /* Inputs */
-    --input-bg:    #091525;
+    --input-bg:    #FFFFFF;
 
-    /* Estados */
+    --online:      #16A34A;
+    --error:       #DC2626;
+    --warning:     #D97706;
+
+    --unread-bg:   #1F7A8C;
+    --active-row:  rgba(31,122,140,0.10);
+    --hover:       rgba(31,122,140,0.06);
+    --ring:        rgba(31,122,140,0.45);
+
+    --shadow-card: 0 8px 16px rgba(0,0,0,0.12);
+}
+
+html.dark {
+    --bg:          #0B0D0F;
+    --panel-bg:    #14181B;
+    --sidebar-bg:  #08090B;
+    --list-bg:     #0F1316;
+
+    --accent:      #2E9DAE;
+    --accent-dark: #1F7A8C;
+
+    --text:        #E7ECEF;
+    --text-muted:  #8B959C;
+
+    --border:      #232A2F;
+
+    --bubble-sent: #1F7A8C;
+    --bubble-recv: #181D21;
+
+    --input-bg:    #14181B;
+
     --online:      #22C55E;
-    --error:       #EF4444;
-    --warning:     #F59E0B;
+    --error:       #F0616D;
+    --warning:     #F5A623;
 
-    /* Interacciones */
-    --unread-bg:   #3B7DFF;
-    --active-row:  rgba(59,125,255,0.14);
-    --hover:       rgba(59,125,255,0.08);
+    --unread-bg:   #2E9DAE;
+    --active-row:  rgba(46,157,174,0.14);
+    --hover:       rgba(46,157,174,0.08);
+    --ring:        rgba(46,157,174,0.55);
+
+    --shadow-card: 0 8px 20px rgba(0,0,0,0.5);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -221,6 +247,8 @@ ion-icon { font-size: 20px; flex-shrink: 0; }
     justify-content: space-between;
     padding: 18px 16px 12px;
 }
+
+.sidebar-header-acciones { display: flex; align-items: center; gap: 4px; }
 
 .sidebar-logo { font-size: 18px; font-weight: 700; letter-spacing: -.3px; }
 
@@ -582,6 +610,62 @@ ion-icon { font-size: 20px; flex-shrink: 0; }
 .btn-enviar ion-icon { font-size: 18px; }
 .btn-enviar.activo { background: var(--accent); color: #fff; }
 
+/* mic button — same shape as send, accent-filled always */
+.btn-mic {
+    width: 38px;
+    height: 38px;
+    border-radius: 19px;
+    background: var(--accent);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background .15s;
+}
+.btn-mic ion-icon { font-size: 20px; }
+.btn-mic:hover { background: var(--accent-dark, #1D5FD8); }
+
+/* recording bar — replaces composer row while grabbing */
+.barra-grabacion {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 0;
+}
+.rec-info {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--list-bg, #0A1828);
+    border-radius: 20px;
+    padding: 10px 16px;
+    border: 1px solid rgba(239,68,68,.25);
+}
+.rec-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--error, #EF4444);
+    animation: rec-pulse 1s ease-in-out infinite;
+    flex-shrink: 0;
+}
+@keyframes rec-pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: .2; }
+}
+#rec-timer {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--error, #EF4444);
+    min-width: 34px;
+}
+.rec-label {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
 /* ════════════ Overlays / pantallas ════════════ */
 
 .overlay {
@@ -696,6 +780,31 @@ ion-icon { font-size: 20px; flex-shrink: 0; }
     justify-content: space-between;
     margin-bottom: 4px;
 }
+
+.segmented {
+    display: flex;
+    background: var(--list-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 3px;
+    gap: 3px;
+}
+.segmented-opcion {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+.segmented-opcion ion-icon { font-size: 16px; }
+.segmented-opcion:hover { background: var(--hover); }
+.segmented-opcion.activo { background: var(--accent); color: #fff; }
+.segmented-opcion.activo:hover { background: var(--accent); }
 
 .link-accent {
     display: inline-flex;

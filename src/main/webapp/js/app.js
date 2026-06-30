@@ -30,6 +30,47 @@
 
     const $ = (sel) => document.querySelector(sel);
 
+    // ───────── Tema (claro/oscuro/sistema) ─────────
+    const Theme = (() => {
+        const KEY = "tema";
+        const mq = window.matchMedia("(prefers-color-scheme: dark)");
+
+        function effective(mode) {
+            return mode === "system" ? (mq.matches ? "dark" : "light") : mode;
+        }
+
+        function apply(mode) {
+            const isDark = effective(mode) === "dark";
+            document.documentElement.classList.toggle("dark", isDark);
+            const meta = document.getElementById("meta-theme-color");
+            if (meta) meta.setAttribute("content", isDark ? "#0B0D0F" : "#FFFFFF");
+        }
+
+        function set(mode) {
+            localStorage.setItem(KEY, mode);
+            apply(mode);
+        }
+
+        function current() {
+            return localStorage.getItem(KEY) || "system";
+        }
+
+        function init() {
+            apply(current());
+            mq.addEventListener("change", () => {
+                if (current() === "system") apply("system");
+            });
+        }
+
+        return { init, set, current };
+    })();
+
+    function renderTemaSegmented() {
+        const actual = Theme.current();
+        document.querySelectorAll("#tema-segmented .segmented-opcion").forEach(b =>
+            b.classList.toggle("activo", b.dataset.tema === actual));
+    }
+
     // ───────── Helpers (utils de la app Expo) ─────────
 
     // constants/emojis.ts
@@ -272,6 +313,21 @@
                 }
                 return;
             }
+            case "PUBLIC_KEY_ROTATED": {
+                const uid = Number(data.usuarioId);
+                delete state.pubKeyCache[uid];
+                for (const chat of state.chats) {
+                    if (chat.tipo !== "GRUPO" || !state.groupKeys[chat.id]) continue;
+                    try {
+                        const miembros = await api("GET", `api/chats/${chat.id}/miembros`);
+                        if (miembros.some(m => m.id === uid)) {
+                            await distribuirClaveGrupo(chat.id, miembros);
+                        }
+                    } catch { /* otro cliente conectado lo intentará */ }
+                }
+                if (state.chatActual) await cargarMensajes(state.chatActual.id, { mantenerScroll: true });
+                return;
+            }
             default: {
                 // mensaje nuevo: { id, chatId, remitente, remitenteId, contenido, timestamp }
                 if (data.remitenteId === undefined || data.chatId === undefined) return;
@@ -368,6 +424,8 @@
         $("#typing-indicator").hidden = true;
         cancelarEdicion();
         $("#emoji-picker").hidden = true;
+        // abort any active recording when switching chats
+        if (rec.mediaRecorder && rec.mediaRecorder.state !== "inactive") detenerGrabacion();
         $("#panel-vacio").hidden = true;
         $("#panel-chat").hidden = false;
 
@@ -903,8 +961,86 @@
 
     function actualizarBotonEnviar() {
         const tieneTexto = $("#input-mensaje").value.trim().length > 0;
-        $("#btn-enviar").classList.toggle("activo", tieneTexto);
-        $(".btn-camara").hidden = tieneTexto;
+        const btnEnviar = $("#btn-enviar");
+        if (btnEnviar) btnEnviar.classList.toggle("activo", tieneTexto);
+        const btnMic = $("#btn-mic");
+        if (btnMic) btnMic.hidden = tieneTexto;
+    }
+
+    // ───────── Grabación de audio ─────────
+    const rec = { mediaRecorder: null, chunks: [], stream: null, timer: null, segundos: 0 };
+
+    function fmtSeg(s) {
+        return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+    }
+
+    async function iniciarGrabacion() {
+        try {
+            rec.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        } catch {
+            mostrarToast("No se pudo acceder al micrófono", "error");
+            return;
+        }
+        rec.chunks = [];
+        rec.mediaRecorder = new MediaRecorder(rec.stream);
+        rec.mediaRecorder.ondataavailable = e => { if (e.data.size) rec.chunks.push(e.data); };
+        rec.mediaRecorder.start();
+
+        rec.segundos = 0;
+        $("#rec-timer").textContent = fmtSeg(0);
+        rec.timer = setInterval(() => {
+            rec.segundos++;
+            $("#rec-timer").textContent = fmtSeg(rec.segundos);
+        }, 1000);
+
+        $(".composer").hidden = true;
+        $("#barra-grabacion").hidden = false;
+    }
+
+    function detenerGrabacion() {
+        clearInterval(rec.timer);
+        if (rec.mediaRecorder && rec.mediaRecorder.state !== "inactive") {
+            rec.mediaRecorder.stop();
+        }
+        rec.stream?.getTracks().forEach(t => t.stop());
+        $(".composer").hidden = false;
+        $("#barra-grabacion").hidden = true;
+    }
+
+    async function enviarAudio() {
+        return new Promise(resolve => {
+            rec.mediaRecorder.onstop = async () => {
+                try {
+                    const blob = new Blob(rec.chunks, { type: rec.mediaRecorder.mimeType || "audio/webm" });
+                    const ext  = blob.type.includes("ogg") ? "ogg" : blob.type.includes("mp4") ? "mp4" : "webm";
+                    const base64 = await new Promise((res, rej) => {
+                        const reader = new FileReader();
+                        reader.onload  = () => res(reader.result.split(",")[1]);
+                        reader.onerror = rej;
+                        reader.readAsDataURL(blob);
+                    });
+                    const archivo = await api("POST", "api/mensajes/upload", {
+                        nombreArchivo: `audio-${Date.now()}.${ext}`,
+                        mimeType: blob.type,
+                        contenidoBase64: base64,
+                    });
+                    await api("POST", "api/mensajes/enviar", {
+                        chatId: state.chatActual.id,
+                        contenido: archivo.urlArchivo,
+                        tipo: "AUDIO",
+                        nombreArchivo: archivo.nombreArchivo,
+                        tamanoArchivo: blob.size,
+                        mimeType: blob.type,
+                    });
+                    await cargarMensajes(state.chatActual.id);
+                    cargarChats();
+                } catch (e) {
+                    mostrarToast("Error enviando audio: " + e.message, "error");
+                }
+                resolve();
+            };
+            detenerGrabacion();
+        });
     }
 
     // ───────── Emoji picker ─────────
@@ -1568,6 +1704,17 @@
 
         // sidebar
         $("#btn-perfil").addEventListener("click", abrirPerfil);
+        $("#btn-ajustes").addEventListener("click", () => {
+            cerrarOverlays();
+            renderTemaSegmented();
+            $("#modal-ajustes").hidden = false;
+        });
+        $("#tema-segmented").addEventListener("click", (ev) => {
+            const btn = ev.target.closest(".segmented-opcion");
+            if (!btn) return;
+            Theme.set(btn.dataset.tema);
+            renderTemaSegmented();
+        });
         $("#btn-nuevo-chat").addEventListener("click", () => {
             cerrarOverlays();
             $("#modal-nuevo-chat").hidden = false;
@@ -1581,6 +1728,9 @@
 
         // composer
         $("#btn-enviar").addEventListener("click", enviarMensaje);
+        $("#btn-mic")?.addEventListener("click", iniciarGrabacion);
+        $("#btn-cancelar-audio")?.addEventListener("click", detenerGrabacion);
+        $("#btn-enviar-audio")?.addEventListener("click", enviarAudio);
         $("#input-mensaje").addEventListener("input", (ev) => {
             actualizarBotonEnviar(ev);
             enviarTyping();
@@ -1664,6 +1814,7 @@
     }
 
     // ───────── Init ─────────
+    Theme.init();
     initEventos();
     initEmojiPicker();
     if (state.token && state.usuario) {

@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Terotalk</title>
+    <meta name="theme-color" content="#FFFFFF" id="meta-theme-color">
+    <meta name="color-scheme" content="light dark">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono&display=swap" rel="stylesheet">
@@ -69,10 +71,15 @@
         <aside class="sidebar">
             <header class="sidebar-header">
                 <h1 class="sidebar-logo">Terotalk</h1>
-                <button id="btn-perfil" class="btn-avatar" title="Perfil">
-                    <span class="avatar avatar-34" id="mi-avatar"></span>
-                    <span class="dot dot-online" id="mi-dot"></span>
-                </button>
+                <div class="sidebar-header-acciones">
+                    <button id="btn-ajustes" class="btn-icono" title="Ajustes">
+                        <ion-icon name="settings-outline"></ion-icon>
+                    </button>
+                    <button id="btn-perfil" class="btn-avatar" title="Perfil">
+                        <span class="avatar avatar-34" id="mi-avatar"></span>
+                        <span class="dot dot-online" id="mi-dot"></span>
+                    </button>
+                </div>
             </header>
 
             <div class="search-pill">
@@ -147,20 +154,29 @@
                         <div class="input-pill">
                             <input id="input-mensaje" type="text" placeholder="Mensaje" maxlength="4000" autocomplete="off">
                         </div>
-                        <button id="btn-adjunto"
-                                class="btn-icono"
-                                title="Adjuntar archivo">
+                        <button id="btn-adjunto" class="btn-icono" title="Adjuntar archivo">
                             <ion-icon name="attach-outline"></ion-icon>
                         </button>
-                        <input
-                            id="input-adjunto"
-                            type="file"
-                            hidden>
-                        <button class="btn-icono btn-camara" title="Cámara">
-                            <ion-icon name="camera-outline"></ion-icon>
+                        <input id="input-adjunto" type="file" hidden>
+                        <button id="btn-mic" class="btn-mic" title="Grabar audio">
+                            <ion-icon name="mic"></ion-icon>
                         </button>
                         <button id="btn-enviar" class="btn-enviar" title="Enviar">
-                            <ion-icon name="paper-plane-outline"></ion-icon>
+                            <ion-icon name="send"></ion-icon>
+                        </button>
+                    </div>
+
+                    <div id="barra-grabacion" class="barra-grabacion" hidden>
+                        <button id="btn-cancelar-audio" class="btn-icono" title="Cancelar">
+                            <ion-icon name="trash-outline"></ion-icon>
+                        </button>
+                        <div class="rec-info">
+                            <span class="rec-dot"></span>
+                            <span id="rec-timer">0:00</span>
+                            <span class="rec-label">Grabando…</span>
+                        </div>
+                        <button id="btn-enviar-audio" class="btn-enviar" title="Enviar audio">
+                            <ion-icon name="send"></ion-icon>
                         </button>
                     </div>
                 </div>
@@ -313,6 +329,31 @@
             <button id="btn-logout" class="btn-peligro btn-full">
                 <ion-icon name="log-out-outline"></ion-icon> Cerrar sesión
             </button>
+        </div>
+    </div>
+
+    <!-- ═══════════ Ajustes ═══════════ -->
+    <div id="modal-ajustes" class="overlay" hidden>
+        <div class="pantalla">
+            <header class="pantalla-header">
+                <h2>Ajustes</h2>
+                <button class="btn-icono cerrar" data-overlay="modal-ajustes"><ion-icon name="close-outline"></ion-icon></button>
+            </header>
+
+            <div class="card">
+                <p class="section-label">APARIENCIA</p>
+                <div class="segmented" id="tema-segmented">
+                    <button class="segmented-opcion" data-tema="light">
+                        <ion-icon name="sunny-outline"></ion-icon> Claro
+                    </button>
+                    <button class="segmented-opcion" data-tema="dark">
+                        <ion-icon name="moon-outline"></ion-icon> Oscuro
+                    </button>
+                    <button class="segmented-opcion" data-tema="system">
+                        <ion-icon name="phone-portrait-outline"></ion-icon> Sistema
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
