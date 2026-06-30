@@ -55,7 +55,6 @@ public class UsuarioDAO {
             SELECT u
             FROM Usuario u
             WHERE u.rol <> 'ADMIN'
-            AND u.bloqueado = false
             """, Usuario.class)
             .getResultList();
     }
