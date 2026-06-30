@@ -179,6 +179,10 @@ public class ChatService {
             case VIDEO:
                 return "🎥 Video";
 
+        
+            case AUDIO:
+                return "🎤 Audio";
+
             case ARCHIVO:
                 if (!mensaje.getAdjuntos().isEmpty()) {
                     return "📎 " +

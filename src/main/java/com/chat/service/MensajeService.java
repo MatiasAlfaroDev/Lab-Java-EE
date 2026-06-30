@@ -72,6 +72,8 @@ public class MensajeService {
                 mensaje.setTipo(TipoMensaje.IMAGEN);
             } else if (mimeType != null && mimeType.startsWith("video/")) {
                 mensaje.setTipo(TipoMensaje.VIDEO);
+            } else if (mimeType != null && mimeType.startsWith("audio/")) {
+                mensaje.setTipo(TipoMensaje.AUDIO);
             } else {
                 mensaje.setTipo(TipoMensaje.ARCHIVO);
             }
