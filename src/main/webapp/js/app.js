@@ -446,22 +446,16 @@
         texto.className = "bubble-texto" + (m.eliminado ? " eliminado" : "");
         if (m.eliminado) {
             texto.textContent = "Mensaje eliminado";
-        } else if (m.tipo === "ARCHIVO" && m.adjunto) {
+            bubble.appendChild(texto);
+        } else if (
+                (m.tipo === "ARCHIVO" ||
+                m.tipo === "IMAGEN" ||
+                m.tipo === "VIDEO") &&
+                m.adjunto
+            ) {
 
-            const nombre = m.adjunto.nombreArchivo.toLowerCase();
-
-            const esImagen =
-                nombre.endsWith(".jpg") ||
-                nombre.endsWith(".jpeg") ||
-                nombre.endsWith(".png") ||
-                nombre.endsWith(".webp") ||
-                nombre.endsWith(".gif");
-
-            const esVideo =
-                nombre.endsWith(".mp4") ||
-                nombre.endsWith(".mov") ||
-                nombre.endsWith(".avi") ||
-                nombre.endsWith(".mkv");
+            const esImagen = m.tipo === "IMAGEN";
+            const esVideo = m.tipo === "VIDEO";
 
             if (esImagen) {
                 
@@ -575,6 +569,8 @@
 
     // ───────── Menú de mensaje (overlay centrado, como Expo) ─────────
     function abrirMenuMensaje(m, esMio) {
+            console.log("TIPO:", m.tipo);
+    console.log("MENSAJE:", m);
         state.menuMensaje = m;
         const box = $("#menu-mensaje-box");
         box.innerHTML = "";
@@ -598,7 +594,7 @@
             box.appendChild(b);
         };
 
-        if (esMio) item("Editar", () => iniciarEdicion(m));
+        if (esMio && m.tipo === 'TEXTO') item("Editar", () => iniciarEdicion(m));
         item("Eliminar para mí", () => eliminarParaMi(m.id), true);
         if (esMio) item("Eliminar para todos", () => eliminarParaTodos(m.id), true);
         item("Reenviar", () => abrirModalReenviar(m.id));
@@ -1344,7 +1340,12 @@
 
                     chatId: state.chatActual.id,
                     contenido: archivo.urlArchivo,
-                    tipo: "ARCHIVO",
+                    tipo:
+                        file.type.startsWith("image/")
+                            ? "IMAGEN"
+                            : file.type.startsWith("video/")
+                                ? "VIDEO"
+                                : "ARCHIVO",
                     nombreArchivo: archivo.nombreArchivo,
                     tamanoArchivo: archivo.tamanoArchivo,
                     mimeType: file.type

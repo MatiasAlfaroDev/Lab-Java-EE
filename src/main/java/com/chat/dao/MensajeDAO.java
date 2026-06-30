@@ -71,4 +71,19 @@ public class MensajeDAO {
         .getResultList();
     }
 
+    public Mensaje obtenerUltimoMensaje(int chatId) {
+
+        return em.createQuery("""
+            SELECT m
+            FROM Mensaje m
+            WHERE m.chat.chatId = :chatId
+            ORDER BY m.fechaEnviado DESC, m.id DESC
+        """, Mensaje.class)
+        .setParameter("chatId", chatId)
+        .setMaxResults(1)
+        .getResultStream()
+        .findFirst()
+        .orElse(null);
+    }
+
 }

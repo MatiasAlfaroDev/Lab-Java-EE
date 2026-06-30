@@ -67,7 +67,17 @@ public class MensajeService {
         mensaje.setChat(chat);
         mensaje.setEmisor(usuario);
         mensaje.setContenido(contenido);
-        mensaje.setTipo(tipo);
+        if (tipo == TipoMensaje.ARCHIVO) {
+            if (mimeType != null && mimeType.startsWith("image/")) {
+                mensaje.setTipo(TipoMensaje.IMAGEN);
+            } else if (mimeType != null && mimeType.startsWith("video/")) {
+                mensaje.setTipo(TipoMensaje.VIDEO);
+            } else {
+                mensaje.setTipo(TipoMensaje.ARCHIVO);
+            }
+        } else {
+            mensaje.setTipo(tipo);
+        }
         mensaje.setEstado(EstadoMensaje.ENVIADO);
 
         // 3. guardar
@@ -514,6 +524,22 @@ public class MensajeService {
 
         // 3. guardar
         mensajeDAO.guardar(mensaje);
+        em.flush();
+        if (!original.getAdjuntos().isEmpty()) {
+
+            Adjunto originalAdjunto =
+                original.getAdjuntos().get(0);
+
+            Adjunto nuevo = new Adjunto();
+
+            nuevo.setMensajeReferencia(mensaje);
+            nuevo.setNombreArchivo(originalAdjunto.getNombreArchivo());
+            nuevo.setUrlArchivo(originalAdjunto.getUrlArchivo());
+            nuevo.setTamanoArchivo(originalAdjunto.getTamanoArchivo());
+            nuevo.setMimeType(originalAdjunto.getMimeType());
+
+            adjuntoDAO.guardar(nuevo);
+        }
 
         // 4. crear registros MensajeUsuario
         for (MiembroChat miembro : chat.getMiembros()) {
