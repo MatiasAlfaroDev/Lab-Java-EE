@@ -123,6 +123,15 @@
 
                 <div id="zona-mensajes" class="zona-mensajes"></div>
 
+                <div id="typing-indicator" hidden>
+                    <div class="typing-dots">
+                        <span class="typing-dot"></span>
+                        <span class="typing-dot"></span>
+                        <span class="typing-dot"></span>
+                    </div>
+                    <span class="typing-texto"></span>
+                </div>
+
                 <div class="composer-wrap">
                     <div id="emoji-picker" class="emoji-picker" hidden></div>
 
@@ -161,7 +170,22 @@
                     <h2>Gestión de usuarios</h2>
                 </header>
 
-                <p class="section-label">USUARIOS REGISTRADOS</p>
+                <div class="admin-metricas">
+                    <div class="card admin-metrica">
+                        <span class="valor" id="metric-total">—</span>
+                        <span class="etiqueta">Total usuarios</span>
+                    </div>
+                    <div class="card admin-metrica">
+                        <span class="valor" id="metric-online">—</span>
+                        <span class="etiqueta">En línea ahora</span>
+                    </div>
+                    <div class="card admin-metrica">
+                        <span class="valor" id="metric-bloqueados">—</span>
+                        <span class="etiqueta">Bloqueados</span>
+                    </div>
+                </div>
+
+                <p class="section-label" style="padding: 0 16px 8px">USUARIOS REGISTRADOS</p>
 
                 <ul id="lista-usuarios-admin" class="lista-personas"></ul>
                 <div id="modal-bloqueo" class="modal" style="display:none;">

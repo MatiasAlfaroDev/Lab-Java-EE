@@ -807,3 +807,38 @@ ion-icon { font-size: 20px; flex-shrink: 0; }
     font-size: 13px;
     font-weight: 600;
 }
+
+/* ── Toasts ── */
+#toast-container { position: fixed; bottom: 24px; right: 24px; display: flex; flex-direction: column; gap: 8px; z-index: 9999; pointer-events: none; }
+.toast { padding: 10px 16px; border-radius: 10px; font-size: 13px; font-weight: 500; color: white; box-shadow: 0 4px 16px rgba(0,0,0,.4); animation: toast-in .2s ease; max-width: 320px; }
+.toast.success { background: var(--online); }
+.toast.error   { background: var(--error); }
+.toast.info    { background: var(--accent); }
+@keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ── Online dot en chat rows ── */
+.chat-row .avatar-wrap { position: relative; display: inline-flex; flex-shrink: 0; }
+.chat-row .avatar-wrap .dot { position: absolute; bottom: 1px; right: 1px; width: 11px; height: 11px; border-radius: 50%; border: 2px solid var(--sidebar-bg); }
+
+/* ── Audio bubble ── */
+.bubble-audio { display: flex; align-items: center; gap: 10px; padding: 2px 0; min-width: 190px; }
+.btn-play-audio { color: var(--accent); display: flex; align-items: center; background: none; border: none; cursor: pointer; padding: 0; }
+.btn-play-audio ion-icon { font-size: 28px; }
+.audio-barra { flex: 1; height: 3px; background: rgba(212,226,244,.2); border-radius: 2px; overflow: hidden; cursor: pointer; }
+.audio-progreso { height: 100%; background: var(--accent); width: 0%; transition: width .1s linear; }
+.audio-duracion { font-size: 11px; color: rgba(212,226,244,.7); white-space: nowrap; min-width: 32px; }
+
+/* ── Admin metrics ── */
+.admin-metricas { display: flex; gap: 12px; padding: 16px 16px 8px; }
+.admin-metrica { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 14px 8px; }
+.admin-metrica .valor { font-size: 24px; font-weight: 700; color: var(--accent); line-height: 1; }
+.admin-metrica .etiqueta { font-size: 11px; font-weight: 600; letter-spacing: .5px; text-transform: uppercase; color: var(--text-muted); text-align: center; }
+
+/* ── Typing indicator ── */
+#typing-indicator { min-height: 22px; padding: 2px 16px 6px; display: flex; align-items: center; gap: 6px; }
+.typing-dots { display: flex; gap: 3px; align-items: center; }
+.typing-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); animation: typing-pulse 1.2s ease-in-out infinite; }
+.typing-dot:nth-child(2) { animation-delay: .2s; }
+.typing-dot:nth-child(3) { animation-delay: .4s; }
+.typing-texto { font-size: 12px; color: var(--text-muted); }
+@keyframes typing-pulse { 0%, 60%, 100% { opacity: .3; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-3px); } }

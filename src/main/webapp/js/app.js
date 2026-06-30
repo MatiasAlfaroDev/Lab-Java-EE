@@ -81,6 +81,21 @@
         el.style.background = avatarColor(el.textContent);
     }
 
+    // ───────── Toast ─────────
+    function mostrarToast(msg, tipo = "info") {
+        let cont = document.getElementById("toast-container");
+        if (!cont) {
+            cont = document.createElement("div");
+            cont.id = "toast-container";
+            document.body.appendChild(cont);
+        }
+        const t = document.createElement("div");
+        t.className = `toast ${tipo}`;
+        t.textContent = msg;
+        cont.appendChild(t);
+        setTimeout(() => t.remove(), 3000);
+    }
+
     // ───────── Cliente API ─────────
     async function api(method, path, body) {
         const headers = {};
@@ -185,9 +200,60 @@
         $("#mi-dot").className = "dot " + (online ? "dot-online" : "dot-offline");
     }
 
+    // typing indicator state
+    let typingTimer = null;
+    const typingUsers = new Map(); // nombre → timer
+
+    function mostrarTyping() {
+        const ind = $("#typing-indicator");
+        const nombres = [...typingUsers.keys()];
+        if (nombres.length === 0) { ind.hidden = true; return; }
+        const label = nombres.length === 1
+            ? `${nombres[0]} está escribiendo`
+            : `${nombres.slice(0, 2).join(" y ")} están escribiendo`;
+        ind.querySelector(".typing-texto").textContent = label;
+        ind.hidden = false;
+    }
+
+    function enviarTyping() {
+        if (!state.ws || !state.chatActual || !state.usuario) return;
+        state.ws.send(JSON.stringify({
+            tipo: "TYPING",
+            chatId: state.chatActual.id,
+            nombre: state.usuario.nombre
+        }));
+        clearTimeout(typingTimer);
+        typingTimer = setTimeout(() => {
+            if (!state.ws || !state.chatActual) return;
+            state.ws.send(JSON.stringify({
+                tipo: "STOP_TYPING",
+                chatId: state.chatActual.id,
+                nombre: state.usuario.nombre
+            }));
+        }, 3000);
+    }
+
     async function manejarEventoWs(data) {
         const chatId = Number(data.chatId);
         const msgId = Number(data.messageId ?? data.mensajeId ?? data.id);
+
+        // typing events
+        if (data.tipo === "TYPING" || data.tipo === "STOP_TYPING") {
+            if (!state.chatActual || chatId !== state.chatActual.id) return;
+            const nombre = data.nombre || "Alguien";
+            if (data.tipo === "TYPING") {
+                clearTimeout(typingUsers.get(nombre));
+                typingUsers.set(nombre, setTimeout(() => {
+                    typingUsers.delete(nombre);
+                    mostrarTyping();
+                }, 4000));
+            } else {
+                clearTimeout(typingUsers.get(nombre));
+                typingUsers.delete(nombre);
+            }
+            mostrarTyping();
+            return;
+        }
 
         switch (data.type) {
             case "message_delivered":
@@ -253,7 +319,15 @@
             const li = document.createElement("li");
             li.className = "chat-row" + (state.chatActual?.id === chat.id ? " activo" : "");
 
-            li.appendChild(crearAvatar(nombre, 44, nombre.slice(0, 2).toUpperCase()));
+            const avatarWrap = document.createElement("div");
+            avatarWrap.className = "avatar-wrap";
+            avatarWrap.appendChild(crearAvatar(nombre, 44, nombre.slice(0, 2).toUpperCase()));
+            if (chat.estado != null) {
+                const rowDot = document.createElement("span");
+                rowDot.className = "dot " + (chat.estado === "ONLINE" ? "dot-online" : "dot-offline");
+                avatarWrap.appendChild(rowDot);
+            }
+            li.appendChild(avatarWrap);
 
             const body = document.createElement("div");
             body.className = "chat-row-body";
@@ -290,6 +364,8 @@
 
     async function abrirChat(chat) {
         state.chatActual = chat;
+        typingUsers.clear();
+        $("#typing-indicator").hidden = true;
         cancelarEdicion();
         $("#emoji-picker").hidden = true;
         $("#panel-vacio").hidden = true;
@@ -497,41 +573,38 @@
                 texto.textContent = "[adjunto no descifrable]";
             }
         } else if (m.tipo === "AUDIO" && m.adjunto) {
-            const audioDiv = document.createElement("div");
-            audioDiv.className = "bubble-audio";
-            const audio = document.createElement("audio");
-            audio.preload = "metadata";
+            const audioEl = document.createElement("audio");
+            audioEl.preload = "metadata";
+            obtenerUrlImagen(m.adjunto).then(url => { audioEl.src = url; }).catch(() => {});
+            const audioWrap = document.createElement("div");
+            audioWrap.className = "bubble-audio";
             const btnPlay = document.createElement("button");
             btnPlay.className = "btn-play-audio";
-            btnPlay.innerHTML = `<ion-icon name="play-circle"></ion-icon>`;
+            btnPlay.innerHTML = '<ion-icon name="play-circle-outline"></ion-icon>';
             const barra = document.createElement("div");
             barra.className = "audio-barra";
             const progreso = document.createElement("div");
             progreso.className = "audio-progreso";
             barra.appendChild(progreso);
-            const durLabel = document.createElement("span");
-            durLabel.className = "audio-duracion";
-            durLabel.textContent = "0:00";
-            fetch(`api/mensajes/adjunto/${m.adjunto.urlArchivo}`, { headers: { Authorization: state.token } })
-                .then(r => r.blob()).then(blob => { audio.src = URL.createObjectURL(blob); });
-            audio.addEventListener("loadedmetadata", () => { durLabel.textContent = formatDuracion(audio.duration); });
-            audio.addEventListener("timeupdate", () => {
-                const pct = audio.duration ? (audio.currentTime / audio.duration) * 100 : 0;
-                progreso.style.width = pct + "%";
-                durLabel.textContent = formatDuracion(audio.currentTime);
-            });
-            audio.addEventListener("ended", () => {
-                btnPlay.innerHTML = `<ion-icon name="play-circle"></ion-icon>`;
-                progreso.style.width = "0%";
-            });
+            const dur = document.createElement("span");
+            dur.className = "audio-duracion";
+            dur.textContent = "0:00";
             btnPlay.addEventListener("click", () => {
-                if (audio.paused) { audio.play(); btnPlay.innerHTML = `<ion-icon name="pause-circle"></ion-icon>`; }
-                else { audio.pause(); btnPlay.innerHTML = `<ion-icon name="play-circle"></ion-icon>`; }
+                if (audioEl.paused) { audioEl.play(); btnPlay.innerHTML = '<ion-icon name="pause-circle-outline"></ion-icon>'; }
+                else { audioEl.pause(); btnPlay.innerHTML = '<ion-icon name="play-circle-outline"></ion-icon>'; }
             });
-            audioDiv.appendChild(btnPlay);
-            audioDiv.appendChild(barra);
-            audioDiv.appendChild(durLabel);
-            bubble.appendChild(audioDiv);
+            audioEl.addEventListener("timeupdate", () => {
+                const p = audioEl.duration ? (audioEl.currentTime / audioEl.duration) * 100 : 0;
+                progreso.style.width = p + "%";
+                dur.textContent = formatDuracion(audioEl.currentTime);
+            });
+            audioEl.addEventListener("ended", () => {
+                btnPlay.innerHTML = '<ion-icon name="play-circle-outline"></ion-icon>';
+                progreso.style.width = "0%";
+                dur.textContent = "0:00";
+            });
+            audioWrap.append(btnPlay, barra, dur);
+            bubble.appendChild(audioWrap);
         } else if ((m.tipo === "ARCHIVO" || m.tipo === "IMAGEN" || m.tipo === "VIDEO") && m.adjunto) {
             const esImagen = m.tipo === "IMAGEN";
             const esVideo = m.tipo === "VIDEO";
@@ -721,7 +794,7 @@
             await cargarMensajes(chatId);
             cargarChats();
         } catch (e) {
-            alert("No se pudo enviar: " + e.message);
+            mostrarToast("No se pudo enviar: " + e.message, "error");
         }
     }
 
@@ -810,7 +883,7 @@
             await api("PUT", `api/mensajes/${id}/eliminar-para-mi`);
             await cargarMensajes(state.chatActual.id, { mantenerScroll: true });
             cargarChats();
-        } catch (e) { alert(e.message); }
+        } catch (e) { mostrarToast(e.message, "error"); }
     }
 
     async function eliminarParaTodos(id) {
@@ -818,14 +891,14 @@
             await api("PUT", `api/mensajes/${id}/eliminar-para-todos`);
             await cargarMensajes(state.chatActual.id, { mantenerScroll: true });
             cargarChats();
-        } catch (e) { alert(e.message); }
+        } catch (e) { mostrarToast(e.message, "error"); }
     }
 
     async function reaccionar(mensajeId, emoji) {
         try {
             await api("POST", "api/reacciones", { mensajeId, emoji });
             await cargarMensajes(state.chatActual.id, { mantenerScroll: true });
-        } catch (e) { alert(e.message); }
+        } catch (e) { mostrarToast(e.message, "error"); }
     }
 
     function actualizarBotonEnviar() {
@@ -1341,6 +1414,11 @@
         try {
             const usuarios = await api("GET", "api/usuarios/listar");
 
+            const sinAdmin = usuarios.filter(u => u.rol !== "ADMIN");
+            $("#metric-total").textContent     = sinAdmin.length;
+            $("#metric-online").textContent    = sinAdmin.filter(u => u.estado === "ONLINE").length;
+            $("#metric-bloqueados").textContent = sinAdmin.filter(u => u.bloqueado).length;
+
             const ul = $("#lista-usuarios-admin");
             ul.innerHTML = "";
 
@@ -1369,7 +1447,7 @@
                 ul.appendChild(li);
             }
         } catch (e) {
-            alert(e.message);
+            mostrarToast(e.message, "error");
         }
     }
 
@@ -1397,7 +1475,7 @@
                 cargarUsuariosAdmin();
 
             } catch (e) {
-                alert(e.message);
+                mostrarToast(e.message, "error");
             }
         };
 
@@ -1503,7 +1581,10 @@
 
         // composer
         $("#btn-enviar").addEventListener("click", enviarMensaje);
-        $("#input-mensaje").addEventListener("input", actualizarBotonEnviar);
+        $("#input-mensaje").addEventListener("input", (ev) => {
+            actualizarBotonEnviar(ev);
+            enviarTyping();
+        });
         $("#input-mensaje").addEventListener("keydown", (ev) => {
             if (ev.key === "Enter" && !ev.shiftKey) { ev.preventDefault(); enviarMensaje(); }
             if (ev.key === "Escape") { cancelarEdicion(); $("#emoji-picker").hidden = true; }
