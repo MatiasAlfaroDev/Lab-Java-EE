@@ -78,6 +78,40 @@ public class ChatController {
             }
     }
 
+    @DELETE
+    @Path("/{chatId}/para-mi")
+    public Response eliminarChatParaMi(
+        @PathParam("chatId") int chatId,
+        @HeaderParam("Authorization") String token
+    ) {
+        try {
+
+            if (token == null || token.isBlank()) {
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity("Falta token")
+                        .build();
+            }
+
+            Long userId = tokenService.validarToken(token);
+
+            chatService.eliminarChatParaMi(chatId, userId.intValue());
+
+            return Response.ok("Chat eliminado para el usuario").build();
+
+        } catch (RuntimeException e) {
+
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(e.getMessage())
+                    .build();
+
+        } catch (Exception e) {
+
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .entity("Token inválido")
+                    .build();
+        }
+    }
+
     @GET
     public Response obtenerChats(@HeaderParam("Authorization") String token) {
 

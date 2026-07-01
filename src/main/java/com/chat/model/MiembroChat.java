@@ -31,6 +31,9 @@ public class MiembroChat {
     @Column(name = "ultimo_leido")
     private LocalDateTime ultimoLeido;
 
+    @Column(name = "eliminado_para_mi", nullable = false)
+    private boolean eliminadoParaMi = false;
+
     @PrePersist
     protected void onCreate() {
         this.fechaUnido = LocalDateTime.now();
@@ -54,4 +57,7 @@ public class MiembroChat {
 
     public LocalDateTime getUltimoLeido() { return ultimoLeido; }
     public void setUltimoLeido(LocalDateTime ultimoLeido) { this.ultimoLeido = ultimoLeido; }
+
+    public boolean isEliminadoParaMi() {return eliminadoParaMi;}
+    public void setEliminadoParaMi(boolean eliminadoParaMi) {this.eliminadoParaMi = eliminadoParaMi;}
 }

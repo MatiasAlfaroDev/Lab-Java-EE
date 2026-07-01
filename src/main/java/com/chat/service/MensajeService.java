@@ -94,6 +94,8 @@ public class MensajeService {
         mensaje.setEstado(EstadoMensaje.ENVIADO);
         mensaje.setCifrado(cifrado);
 
+        chatDAO.restaurarChatParaTodos(chatId);
+
         // 3. guardar
         mensajeDAO.guardar(mensaje);
         em.flush(); // asegurar que el ID se genere antes de continuar
