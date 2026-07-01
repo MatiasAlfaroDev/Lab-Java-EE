@@ -60,6 +60,11 @@ public class UsuarioDAO {
             .getResultList();
     }
 
+    public List<Usuario> listarTodos() {
+        return em.createQuery("SELECT u FROM Usuario u ORDER BY u.nombre", Usuario.class)
+            .getResultList();
+    }
+
     @Transactional
     public void limpiarToken(String pushToken) {
 

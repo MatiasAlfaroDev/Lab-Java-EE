@@ -9,6 +9,7 @@ import jakarta.websocket.server.ServerEndpoint;
 import jakarta.inject.Inject;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -148,6 +149,10 @@ public class ChatWebSocket {
         int end = rest.indexOf(',');
         if (end < 0) end = rest.indexOf('}');
         return end > 0 ? rest.substring(0, end).trim() : rest.trim();
+    }
+
+    public static void broadcastAll(String mensaje) {
+        sendToUsers(new ArrayList<>(sessions.keySet()), mensaje);
     }
 
     public static void sendToUsers(

@@ -30,6 +30,13 @@ public class ClaveGrupoDAO {
         em.persist(cg);
     }
 
+    @Transactional
+    public void eliminarPorMiembro(int miembroId) {
+        em.createQuery("DELETE FROM ClaveGrupo c WHERE c.miembroId = :miembroId")
+          .setParameter("miembroId", miembroId)
+          .executeUpdate();
+    }
+
     public ClaveGrupo buscarPorMiembro(int chatId, int miembroId) {
         try {
             return em.createQuery(
