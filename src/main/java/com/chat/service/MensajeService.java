@@ -82,6 +82,8 @@ public class MensajeService {
         }
         mensaje.setEstado(EstadoMensaje.ENVIADO);
 
+        chatDAO.restaurarChatParaTodos(chatId);
+
         // 3. guardar
         mensajeDAO.guardar(mensaje);
         em.flush(); // asegurar que el ID se genere antes de continuar

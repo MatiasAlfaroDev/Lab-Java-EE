@@ -43,6 +43,7 @@ public class ChatDAO {
                 SELECT mc.chat.chatId
                 FROM MiembroChat mc
                 WHERE mc.usuario.id = :userId
+                AND mc.eliminadoParaMi = false
             )
         """, Chat.class)
         .setParameter("userId", userId)
@@ -61,6 +62,32 @@ public class ChatDAO {
     @Transactional
     public void guardarMiembro(MiembroChat miembro) {
         em.persist(miembro);
+    }
+
+    @Transactional
+    public void eliminarChatParaMi(int chatId, int usuarioId) {
+
+    MiembroChat miembro = buscarMiembro(chatId, usuarioId);
+
+    if (miembro == null) {
+        throw new IllegalArgumentException("El usuario no pertenece al chat.");
+    }
+
+    miembro.setEliminadoParaMi(true);
+
+    em.merge(miembro);  
+    }
+
+    @Transactional
+    public void restaurarChatParaTodos(int chatId) {
+
+        List<MiembroChat> miembros = obtenerMiembros(chatId);
+
+        for (MiembroChat miembro : miembros) {
+            if (miembro.isEliminadoParaMi()) {
+                miembro.setEliminadoParaMi(false);
+            }
+        }
     }
 
     @Transactional

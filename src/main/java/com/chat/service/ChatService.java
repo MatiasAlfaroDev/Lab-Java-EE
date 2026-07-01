@@ -136,7 +136,8 @@ public class ChatService {
             MiembroChat miembro = new MiembroChat();
             miembro.setChat(chat);
             miembro.setUsuario(usuario);
-
+            miembro.setEliminadoParaMi(false);
+            
             // Definir rol correctamente
             if (userIdLista.equals(userId.intValue())) {
                 miembro.setChatRol(ChatRol.CREADOR);
@@ -152,6 +153,18 @@ public class ChatService {
         }
 
         return chat;
+    }
+
+    @Transactional
+    public void eliminarChatParaMi(int chatId, int usuarioId) {
+
+        Chat chat = chatDAO.buscarPorId(chatId);
+
+        if (chat == null) {
+            throw new IllegalArgumentException("El chat no existe.");
+        }
+
+        chatDAO.eliminarChatParaMi(chatId, usuarioId);
     }
 
     public List<Chat> obtenerChats() {
