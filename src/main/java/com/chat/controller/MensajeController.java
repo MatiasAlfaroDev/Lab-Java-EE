@@ -90,7 +90,8 @@ public class MensajeController {
                     request.getTamanoArchivo(),
                     request.getMimeType(),
                     request.isCifrado(),
-                    request.getParentId()
+                    request.getParentId(),
+                    request.getMensajeOrigenId()
             );
 
             return Response.ok("Mensaje enviado").build();

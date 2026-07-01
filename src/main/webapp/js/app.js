@@ -845,6 +845,7 @@
             const esImagen = m.tipo === "IMAGEN";
             const esVideo = m.tipo === "VIDEO";
             if (esImagen) {
+                bubble.classList.add("bubble-media");
                 const img = document.createElement("img");
                 img.className = "bubble-image";
                 img.addEventListener("load", () => {
@@ -856,13 +857,25 @@
                 });
                 bubble.appendChild(img);
             } else if (esVideo) {
-                const video = document.createElement("div");
-                video.className = "bubble-video";
-                video.innerHTML = `<ion-icon name="play-circle" class="video-icon"></ion-icon><span>${m.adjunto.nombreArchivo}</span>`;
-                video.addEventListener("click", async () => {
+                bubble.classList.add("bubble-media");
+                const wrap = document.createElement("div");
+                wrap.className = "bubble-video";
+                const vid = document.createElement("video");
+                vid.preload = "metadata";
+                vid.muted = true;
+                vid.addEventListener("loadedmetadata", () => {
+                    vid.currentTime = Math.min(0.1, vid.duration || 0); // fuerza un frame visible como preview
+                    if (pegarAbajo) { const z = $("#zona-mensajes"); z.scrollTop = z.scrollHeight; }
+                });
+                obtenerUrlImagen(m.adjunto).then(url => { vid.src = url; }).catch(() => {});
+                const playIcon = document.createElement("ion-icon");
+                playIcon.setAttribute("name", "play-circle");
+                playIcon.className = "video-icon";
+                wrap.append(vid, playIcon);
+                wrap.addEventListener("click", async () => {
                     try { await abrirAdjunto(m.adjunto); } catch (e) { mostrarToast(e.message, "error"); }
                 });
-                bubble.appendChild(video);
+                bubble.appendChild(wrap);
             } else {
                 texto.textContent = `📎 ${m.adjunto.nombreArchivo}`;
                 texto.style.cursor = "pointer";
@@ -1041,29 +1054,24 @@
                 if (esGrupo) {
                     const gk = await getGroupKey(chatId);
                     if (gk) { payload = await Crypto.encryptGroup(contenido, gk); cifrado = true; }
-                } else {
-                    const otro = state.miembros?.find(m => m.id !== state.usuario.id);
-                    if (!otro) {
-                        // cargar miembros si no los tenemos aún
-                        const ms = await api("GET", `api/chats/${chatId}/miembros`);
-                        state.miembros = ms;
+                    if (!cifrado) {
+                        throw new Error("No se puede cifrar: el grupo todavía no tiene clave (pedile al creador que abra este chat)");
                     }
-                    const otroM = state.miembros?.find(m => m.id !== state.usuario.id);
-                    if (otroM) {
-                        const pub = await getPubKey(otroM.id);
+                } else {
+                    if (!state.miembros?.find(m => m.id !== state.usuario.id)) {
+                        // cargar miembros si no los tenemos aún
+                        state.miembros = await api("GET", `api/chats/${chatId}/miembros`);
+                    }
+                    const otro = state.miembros?.find(m => m.id !== state.usuario.id);
+                    if (otro) {
+                        const pub = await getPubKey(otro.id);
                         if (pub) { payload = await Crypto.encryptDirect(contenido, pub); cifrado = true; }
                     }
                     if (!cifrado) {
                         throw new Error("No se puede cifrar: destinatario sin clave E2E registrada");
                     }
-                    await api("POST", "api/mensajes/enviar", { chatId, contenido: payload, tipo: "TEXTO", cifrado, parentId: state.respondiendo ? state.respondiendo.id : undefined });
                 }
-                if (esGrupo) {
-                    if (!cifrado) {
-                        throw new Error("No se puede cifrar: destinatario sin clave E2E registrada");
-                    }
-                    await api("POST", "api/mensajes/enviar", { chatId, contenido: payload, tipo: "TEXTO", cifrado, parentId: state.respondiendo ? state.respondiendo.id : undefined });
-                }
+                await api("POST", "api/mensajes/enviar", { chatId, contenido: payload, tipo: "TEXTO", cifrado, parentId: state.respondiendo ? state.respondiendo.id : undefined });
             }
             input.value = "";
             autoResizeTextarea(input);
@@ -1780,7 +1788,8 @@
                             nombreArchivo: original.adjunto.nombreArchivo,
                             tamanoArchivo: original.adjunto.tamanoArchivo,
                             mimeType: original.adjunto.mimeType,
-                            cifrado: false
+                            cifrado: false,
+                            mensajeOrigenId: original.id
                         });
                     } else {
                         // 2. Obtener el texto plano (ya descifrado en m._plain, o plano si no era cifrado)
@@ -1810,7 +1819,8 @@
                             chatId: chatDestino.id,
                             contenido: payload,
                             tipo: original.tipo || "TEXTO",
-                            cifrado
+                            cifrado,
+                            mensajeOrigenId: original.id
                         });
                     }
 

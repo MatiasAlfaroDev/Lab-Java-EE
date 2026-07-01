@@ -67,4 +67,9 @@ public class EnviarMensajeRequest {
     public Integer getParentId() { return parentId; }
     public void setParentId(Integer parentId) { this.parentId = parentId; }
 
+    private Integer mensajeOrigenId;
+
+    public Integer getMensajeOrigenId() { return mensajeOrigenId; }
+    public void setMensajeOrigenId(Integer mensajeOrigenId) { this.mensajeOrigenId = mensajeOrigenId; }
+
 }

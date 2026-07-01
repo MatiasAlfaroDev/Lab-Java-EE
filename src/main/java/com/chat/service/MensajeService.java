@@ -45,7 +45,7 @@ public class MensajeService {
 
 
     @Transactional
-    public void enviarMensaje(int chatId, int userId, String contenido, TipoMensaje tipo, String nombreArchivo, Long tamanoArchivo, String mimeType, boolean cifrado, Integer parentId) {
+    public void enviarMensaje(int chatId, int userId, String contenido, TipoMensaje tipo, String nombreArchivo, Long tamanoArchivo, String mimeType, boolean cifrado, Integer parentId, Integer mensajeOrigenId) {
 
         // 1. validaciones
         Chat chat = chatDAO.buscarPorId(chatId);
@@ -71,6 +71,14 @@ public class MensajeService {
             }
         }
 
+        // el reenvío re-cifra el contenido en el cliente para el chat destino y lo
+        // manda por este mismo endpoint (no por /reenviar), así que el origen viaja
+        // como cualquier otro campo del request, sin exigir que esté en este chat.
+        Mensaje mensajeOrigen = null;
+        if (mensajeOrigenId != null && mensajeOrigenId > 0) {
+            mensajeOrigen = mensajeDAO.buscarPorId(mensajeOrigenId);
+        }
+
         // 2. crear mensaje
         Mensaje mensaje = new Mensaje();
 
@@ -78,6 +86,7 @@ public class MensajeService {
         mensaje.setEmisor(usuario);
         mensaje.setContenido(contenido);
         mensaje.setMensajeReferencia(mensajePadre);
+        mensaje.setMensajeOrigen(mensajeOrigen);
         if (tipo == TipoMensaje.ARCHIVO) {
             if (mimeType != null && mimeType.startsWith("image/")) {
                 mensaje.setTipo(TipoMensaje.IMAGEN);
