@@ -6,13 +6,15 @@ public class MiembroChatDTO {
     public String nombre;
     public String email;
     public String rol;
+    public String fotoPerfilUrl;
 
     public MiembroChatDTO() {}
 
-    public MiembroChatDTO(int id, String nombre, String email, String rol) {
+    public MiembroChatDTO(int id, String nombre, String email, String rol, String fotoPerfilUrl) {
         this.id = id;
         this.nombre = nombre;
         this.email = email;
         this.rol = rol;
+        this.fotoPerfilUrl = fotoPerfilUrl;
     }
 }

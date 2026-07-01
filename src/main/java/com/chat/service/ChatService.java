@@ -377,7 +377,10 @@ public class ChatService {
             throw new RuntimeException("No perteneces al chat");
         }
 
-        if (admin.getChatRol() != ChatRol.ADMINISTRADOR &&
+        // cualquier miembro puede sacarse a sí mismo (salir del grupo) sin ser admin/creador
+        boolean seSaleASiMismo = adminId == usuarioEliminarId;
+        if (!seSaleASiMismo &&
+            admin.getChatRol() != ChatRol.ADMINISTRADOR &&
             admin.getChatRol() != ChatRol.CREADOR) {
             throw new RuntimeException("No tienes permisos");
         }
@@ -467,7 +470,8 @@ public class ChatService {
                 m.getUsuario().getId(),
                 m.getUsuario().getNombre(),
                 m.getUsuario().getEmail(),
-                m.getChatRol() != null ? m.getChatRol().name() : ChatRol.MIEMBRO.name()
+                m.getChatRol() != null ? m.getChatRol().name() : ChatRol.MIEMBRO.name(),
+                m.getUsuario().getFotoPerfil() != null ? m.getUsuario().getFotoPerfil().getUrlArchivo() : null
             ))
             .toList();
     }

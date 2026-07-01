@@ -550,7 +550,7 @@
                 const parent = state.mensajes.find(p => p.id === m.parentId);
                 if (parent) {
                     m.parentPreview._plain = parent._plain ?? parent.contenido;
-                } else {
+                } else if (!m.parentPreview.tipo || m.parentPreview.tipo === "TEXTO") {
                     try {
                         m.parentPreview._plain = esGrupo
                             ? await Crypto.decryptGroup(m.parentPreview.contenido, await getGroupKey(chatId))
@@ -566,13 +566,16 @@
         const estabaAbajo = zona.scrollHeight - zona.scrollTop - zona.clientHeight < 80;
         const scrollPrevio = zona.scrollTop;
 
-        renderMensajes();
+        renderMensajes(estabaAbajo);
 
         if (mantenerScroll && !estabaAbajo) zona.scrollTop = scrollPrevio;
         else zona.scrollTop = zona.scrollHeight;
     }
 
-    function renderMensajes() {
+    // pegarAbajo: si la zona estaba cerca del fondo antes de renderizar, las imágenes
+    // que terminan de cargar después (async) deben re-anclar el scroll abajo — si no,
+    // la burbuja crece tras el render y la vista "sube" hasta que otro evento la baja de golpe.
+    function renderMensajes(pegarAbajo = false) {
         const zona = $("#zona-mensajes");
         zona.innerHTML = "";
         let fechaPrevia = null;
@@ -588,7 +591,7 @@
                 sep.appendChild(span);
                 zona.appendChild(sep);
             }
-            zona.appendChild(renderMensaje(m));
+            zona.appendChild(renderMensaje(m, pegarAbajo));
         }
     }
 
@@ -691,7 +694,7 @@
         }
     }
 
-    function renderMensaje(m) {
+    function renderMensaje(m, pegarAbajo = false) {
         const esMio = m.sender_id === state.usuario.id;
 
         const wrap = document.createElement("div");
@@ -723,7 +726,7 @@
             autor.textContent = m.parentPreview.sender_username;
             const texto = document.createElement("span");
             texto.className = "quote-texto";
-            texto.textContent = m.parentPreview._plain ?? m.parentPreview.contenido;
+            texto.textContent = previewMensaje(m.parentPreview);
             quote.append(autor, texto);
             bubble.appendChild(quote);
         }
@@ -804,6 +807,9 @@
             if (esImagen) {
                 const img = document.createElement("img");
                 img.className = "bubble-image";
+                img.addEventListener("load", () => {
+                    if (pegarAbajo) { const z = $("#zona-mensajes"); z.scrollTop = z.scrollHeight; }
+                });
                 obtenerUrlImagen(m.adjunto).then(url => { img.src = url; }).catch(console.error);
                 img.addEventListener("click", async () => {
                     try { await abrirAdjunto(m.adjunto); } catch (e) { mostrarToast(e.message, "error"); }
@@ -888,7 +894,17 @@
                 bubble.appendChild(fila);
             }
 
-            bubble.addEventListener("click", () => abrirMenuMensaje(m, esMio));
+            // botón dedicado para el menú (en vez de que toda la burbuja sea clickeable,
+            // lo que competía con reproducir audio o abrir imágenes)
+            const chevron = document.createElement("button");
+            chevron.className = "msg-chevron";
+            chevron.title = "Opciones";
+            chevron.innerHTML = '<ion-icon name="chevron-down-outline"></ion-icon>';
+            chevron.addEventListener("click", (ev) => {
+                ev.stopPropagation();
+                abrirMenuMensaje(m, esMio);
+            });
+            bubble.appendChild(chevron);
         }
 
         col.appendChild(bubble);
@@ -1083,15 +1099,31 @@
         }
     }
 
+    // etiqueta de vista previa (barra de respuesta y quote dentro de la burbuja):
+    // los tipos no-texto (audio/imagen/video/archivo) no tienen contenido legible en
+    // m._plain/m.contenido (ahí va la URL de almacenamiento cifrada o cruda).
+    function previewMensaje(m) {
+        if (!m) return "";
+        if (m.eliminado) return "Mensaje eliminado";
+        const nombreArchivo = m.nombreArchivo || m.adjunto?.nombreArchivo;
+        switch (m.tipo) {
+            case "AUDIO": return "🎤 Audio";
+            case "IMAGEN": return "📷 Foto";
+            case "VIDEO": return "🎥 Video";
+            case "ARCHIVO": return `📎 ${nombreArchivo || "Archivo"}`;
+            case "ENCUESTA": return "📊 Encuesta";
+            default:
+                if (m._plain === null) return "[mensaje cifrado]";
+                return m._plain ?? m.contenido ?? "";
+        }
+    }
+
     function iniciarRespuesta(m) {
         if (state.editando) cancelarEdicion();
         state.respondiendo = m;
         $("#barra-respuesta").hidden = false;
         $("#respuesta-autor").textContent = m.sender_id === state.usuario.id ? "Tú" : m.sender_username;
-        const previewTexto = m.eliminado ? "Mensaje eliminado"
-            : m.cifrado ? (m._plain ?? "[mensaje cifrado]")
-            : (m.contenido ?? "");
-        $("#respuesta-texto").textContent = previewTexto;
+        $("#respuesta-texto").textContent = previewMensaje(m);
         $("#input-mensaje").focus();
     }
 
@@ -1271,7 +1303,9 @@
     function filaPersona(u, extra) {
         const li = document.createElement("li");
         li.className = "persona";
-        li.appendChild(crearAvatar(u.nombre, 44, u.initials || u.nombre.slice(0, 2).toUpperCase()));
+        const avatar = crearAvatar(u.nombre, 44, u.initials || u.nombre.slice(0, 2).toUpperCase());
+        li.appendChild(avatar);
+        if (u.fotoPerfilUrl) aplicarFotoAvatar(avatar, u.fotoPerfilUrl);
         const info = document.createElement("div");
         info.className = "persona-info";
         const n = document.createElement("span");

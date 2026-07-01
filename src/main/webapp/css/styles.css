@@ -538,11 +538,32 @@ html.dark .fab { box-shadow: 0 4px 14px rgba(46,157,174,.4); }
     display: flex;
     flex-direction: column;
     gap: 4px;
-    cursor: pointer;
+    position: relative;
 }
 .bubble-mio  { background: var(--bubble-sent); border-radius: 16px; border-bottom-right-radius: 6px; }
 .bubble-otro { background: var(--bubble-recv); border-radius: 16px; border-top-left-radius: 6px; }
 .bubble.editando { outline: 1px solid var(--accent); }
+
+.msg-chevron {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 50%;
+    background: rgba(0,0,0,.18);
+    color: var(--text);
+    opacity: .55;
+    cursor: pointer;
+}
+.bubble-mio .msg-chevron { color: #fff; }
+.msg-chevron:hover { opacity: 1; }
+.msg-chevron ion-icon { font-size: 14px; pointer-events: none; }
 
 .bubble-texto { color: var(--text); white-space: pre-wrap; word-break: break-word; }
 .bubble-texto.eliminado { color: var(--text-muted); font-style: italic; }

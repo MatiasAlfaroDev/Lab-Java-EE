@@ -142,12 +142,14 @@ public class MensajeService {
                 .replace("\"", "\\\"")
                 .replace("\n", " ");
             String remitenteSeguro = mensajePadre.getEmisor().getNombre().replace("\"", "\\\"");
+            String nombreArchivoPadre = mensajePadre.getAdjuntos().isEmpty() ? null : mensajePadre.getAdjuntos().get(0).getNombreArchivo();
             parentJson = String.format(
                 """
                 ,
                 "parentId": "%d",
-                "parentPreview": { "sender_username": "%s", "contenido": "%s" }""",
-                mensajePadre.getId(), remitenteSeguro, previewSeguro
+                "parentPreview": { "sender_username": "%s", "contenido": "%s", "tipo": "%s", "nombreArchivo": %s }""",
+                mensajePadre.getId(), remitenteSeguro, previewSeguro, mensajePadre.getTipo().name(),
+                nombreArchivoPadre == null ? "null" : "\"" + nombreArchivoPadre.replace("\"", "\\\"") + "\""
             );
         }
 
@@ -275,7 +277,9 @@ public class MensajeService {
                 dto.parentId = padre.getId();
                 dto.parentPreview = new com.chat.datatype.ParentPreviewDTO(
                     padre.getEmisor().getNombre(),
-                    padre.isEliminado() ? "Mensaje eliminado" : padre.getContenido()
+                    padre.isEliminado() ? "Mensaje eliminado" : padre.getContenido(),
+                    padre.getTipo().name(),
+                    padre.getAdjuntos().isEmpty() ? null : padre.getAdjuntos().get(0).getNombreArchivo()
                 );
             }
             return dto;
