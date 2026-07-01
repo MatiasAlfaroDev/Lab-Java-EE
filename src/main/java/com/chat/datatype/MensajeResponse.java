@@ -21,4 +21,7 @@ public class MensajeResponse {
     public int mensajeOrigenId;
     public UploadAdjuntoResponse adjunto;
     public boolean cifrado;
+    public EncuestaDTO encuesta;
+    public Integer parentId;
+    public ParentPreviewDTO parentPreview;
 }

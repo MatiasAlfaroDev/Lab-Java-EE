@@ -16,6 +16,9 @@
         <class>com.chat.model.ReaccionMensaje</class>
         <class>com.chat.model.Adjunto</class>
         <class>com.chat.model.ClaveGrupo</class>
+        <class>com.chat.model.Encuesta</class>
+        <class>com.chat.model.OpcionEncuesta</class>
+        <class>com.chat.model.VotoEncuesta</class>
 
         <exclude-unlisted-classes>true</exclude-unlisted-classes>
 

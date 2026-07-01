@@ -279,6 +279,7 @@ public class ChatService {
                 chat,
                 userId.intValue()
             ),
+            chat.getTipo().name(),
             obtenerUltimoMensaje(
                 chat.getChatId()
             ),

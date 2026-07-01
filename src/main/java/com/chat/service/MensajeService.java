@@ -38,12 +38,14 @@ public class MensajeService {
     private PushNotificationService pushNotificationService;
     @Inject
     private AdjuntoDAO adjuntoDAO;
+    @Inject
+    private EncuestaService encuestaService;
     @PersistenceContext
     private EntityManager em;
 
 
     @Transactional
-    public void enviarMensaje(int chatId, int userId, String contenido, TipoMensaje tipo, String nombreArchivo, Long tamanoArchivo, String mimeType, boolean cifrado) {
+    public void enviarMensaje(int chatId, int userId, String contenido, TipoMensaje tipo, String nombreArchivo, Long tamanoArchivo, String mimeType, boolean cifrado, Integer parentId) {
 
         // 1. validaciones
         Chat chat = chatDAO.buscarPorId(chatId);
@@ -61,12 +63,21 @@ public class MensajeService {
             throw new RuntimeException("No pertenece al chat");
         }
 
+        Mensaje mensajePadre = null;
+        if (parentId != null && parentId > 0) {
+            mensajePadre = mensajeDAO.buscarPorId(parentId);
+            if (mensajePadre == null || mensajePadre.getChat().getChatId() != chatId) {
+                throw new RuntimeException("Mensaje de referencia inválido");
+            }
+        }
+
         // 2. crear mensaje
         Mensaje mensaje = new Mensaje();
 
         mensaje.setChat(chat);
         mensaje.setEmisor(usuario);
         mensaje.setContenido(contenido);
+        mensaje.setMensajeReferencia(mensajePadre);
         if (tipo == TipoMensaje.ARCHIVO) {
             if (mimeType != null && mimeType.startsWith("image/")) {
                 mensaje.setTipo(TipoMensaje.IMAGEN);
@@ -123,6 +134,21 @@ public class MensajeService {
             .replace("\"", "\\\"")
             .replace("\n", " ");
 
+        String parentJson = "";
+        if (mensajePadre != null) {
+            String previewSeguro = (mensajePadre.isEliminado() ? "Mensaje eliminado" : mensajePadre.getContenido())
+                .replace("\"", "\\\"")
+                .replace("\n", " ");
+            String remitenteSeguro = mensajePadre.getEmisor().getNombre().replace("\"", "\\\"");
+            parentJson = String.format(
+                """
+                ,
+                "parentId": "%d",
+                "parentPreview": { "sender_username": "%s", "contenido": "%s" }""",
+                mensajePadre.getId(), remitenteSeguro, previewSeguro
+            );
+        }
+
         String json = String.format(
              """
             {
@@ -131,7 +157,7 @@ public class MensajeService {
                 "remitente": "%s",
                 "remitenteId": "%d",
                 "contenido": "%s",
-                "timestamp": "%s"
+                "timestamp": "%s"%s
             }
             """,
             mensaje.getId(),
@@ -139,7 +165,8 @@ public class MensajeService {
             usuario.getNombre(),
             usuario.getId(),
             contenidoSeguro,
-            mensaje.getFechaEnviado()
+            mensaje.getFechaEnviado(),
+            parentJson
         );
 
         List<Integer> usuarios =
@@ -238,6 +265,17 @@ public class MensajeService {
             }).toList();
             dto.mensajeOrigenId = m.getMensajeOrigen() != null ? m.getMensajeOrigen().getId() : 0;
             dto.cifrado = m.isCifrado();
+            if (m.getTipo() == TipoMensaje.ENCUESTA) {
+                dto.encuesta = encuestaService.obtenerPorMensaje(m.getId(), userId);
+            }
+            if (m.getMensajeReferencia() != null) {
+                Mensaje padre = m.getMensajeReferencia();
+                dto.parentId = padre.getId();
+                dto.parentPreview = new com.chat.datatype.ParentPreviewDTO(
+                    padre.getEmisor().getNombre(),
+                    padre.isEliminado() ? "Mensaje eliminado" : padre.getContenido()
+                );
+            }
             return dto;
         }).toList();
     }

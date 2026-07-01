@@ -62,6 +62,7 @@ public class ChatController {
             ChatDTO dto = new ChatDTO(
                 chat.getChatId(),
                 chat.getNombre(),
+                chat.getTipo().name(),
                 "",
                 "",
                 null, // Estado se calculará en el listado de chats, no es relevante aquí

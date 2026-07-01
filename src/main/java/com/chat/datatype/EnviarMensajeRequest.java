@@ -62,4 +62,9 @@ public class EnviarMensajeRequest {
     public boolean isCifrado() { return cifrado; }
     public void setCifrado(boolean cifrado) { this.cifrado = cifrado; }
 
+    private Integer parentId;
+
+    public Integer getParentId() { return parentId; }
+    public void setParentId(Integer parentId) { this.parentId = parentId; }
+
 }
