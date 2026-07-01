@@ -111,7 +111,7 @@ ion-icon { font-size: 20px; flex-shrink: 0; }
     border: 1px solid var(--border);
     border-radius: 16px;
     padding: 24px;
-    box-shadow: 0 12px 40px rgba(0,0,0,.4);
+    box-shadow: var(--shadow-card);
 }
 
 .login-logo {
@@ -160,7 +160,8 @@ ion-icon { font-size: 20px; flex-shrink: 0; }
 }
 
 .campo input, .ginfo-editar input {
-    padding: 10px 14px;
+    height: 44px;
+    padding: 0 14px;
     background: var(--input-bg);
     border: 1px solid var(--border);
     border-radius: 8px;
@@ -168,7 +169,10 @@ ion-icon { font-size: 20px; flex-shrink: 0; }
     font-size: 13px;
     outline: none;
 }
-.campo input:focus, .ginfo-editar input:focus { border-color: var(--accent); }
+.campo input:focus, .ginfo-editar input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--ring);
+}
 .campo input::placeholder { color: var(--text-muted); }
 
 .btn-primario {
@@ -176,7 +180,8 @@ ion-icon { font-size: 20px; flex-shrink: 0; }
     color: #fff;
     font-size: 13px;
     font-weight: 600;
-    padding: 11px 18px;
+    height: 46px;
+    padding: 0 18px;
     border-radius: 8px;
     display: inline-flex;
     align-items: center;
@@ -184,22 +189,29 @@ ion-icon { font-size: 20px; flex-shrink: 0; }
     gap: 8px;
 }
 .btn-primario:hover { background: var(--accent-dark); }
+.btn-primario:focus-visible { box-shadow: 0 0 0 3px var(--ring); }
 
 .btn-ghost {
     color: var(--text-muted);
     font-size: 13px;
     font-weight: 600;
-    padding: 11px 18px;
+    height: 46px;
+    padding: 0 18px;
     border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 .btn-ghost:hover { color: var(--text); background: var(--hover); }
+.btn-ghost:focus-visible { box-shadow: 0 0 0 3px var(--ring); }
 
 .btn-peligro {
     color: var(--error);
     border: 1px solid var(--error);
     font-size: 13px;
     font-weight: 600;
-    padding: 11px 18px;
+    height: 46px;
+    padding: 0 18px;
     border-radius: 8px;
     display: inline-flex;
     align-items: center;
@@ -207,6 +219,7 @@ ion-icon { font-size: 20px; flex-shrink: 0; }
     gap: 8px;
 }
 .btn-peligro:hover { background: rgba(239,68,68,.12); }
+.btn-peligro:focus-visible { box-shadow: 0 0 0 3px var(--ring); }
 
 .btn-full { width: 100%; }
 
