@@ -982,10 +982,30 @@
     function abrirPollComposer() { mostrarToast("Próximamente", "info"); }
 
     // ───────── Grabación de audio ─────────
-    const rec = { mediaRecorder: null, chunks: [], stream: null, timer: null, segundos: 0 };
+    const rec = { mediaRecorder: null, chunks: [], stream: null, timer: null, segundos: 0, pausado: false };
 
     function fmtSeg(s) {
         return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+    }
+
+    function alternarPausaGrabacion() {
+        if (!rec.mediaRecorder || rec.mediaRecorder.state === "inactive") return;
+        const btn = $("#btn-pausar-audio");
+        if (rec.pausado) {
+            rec.mediaRecorder.resume();
+            rec.timer = setInterval(() => {
+                rec.segundos++;
+                $("#rec-timer").textContent = fmtSeg(rec.segundos);
+            }, 1000);
+            rec.pausado = false;
+            btn.innerHTML = '<ion-icon name="pause-outline"></ion-icon>';
+        } else {
+            rec.mediaRecorder.pause();
+            clearInterval(rec.timer);
+            rec.pausado = true;
+            btn.innerHTML = '<ion-icon name="play-outline"></ion-icon>';
+        }
+        $("#barra-grabacion").classList.toggle("pausada", rec.pausado);
     }
 
     async function iniciarGrabacion() {
@@ -1009,10 +1029,21 @@
 
         $(".composer").hidden = true;
         $("#barra-grabacion").hidden = false;
+
+        const wave = $("#rec-waveform");
+        wave.innerHTML = "";
+        for (let i = 0; i < 28; i++) {
+            const bar = document.createElement("span");
+            bar.style.animationDelay = `${(i % 7) * 0.12}s`;
+            wave.appendChild(bar);
+        }
+        rec.pausado = false;
+        $("#barra-grabacion").classList.remove("pausada");
     }
 
     function detenerGrabacion() {
         clearInterval(rec.timer);
+        rec.pausado = false;
         if (rec.mediaRecorder && rec.mediaRecorder.state !== "inactive") {
             rec.mediaRecorder.stop();
         }
@@ -1726,6 +1757,7 @@
         // composer
         $("#btn-enviar").addEventListener("click", enviarMensaje);
         $("#btn-mic")?.addEventListener("click", iniciarGrabacion);
+        $("#btn-pausar-audio")?.addEventListener("click", alternarPausaGrabacion);
         $("#btn-cancelar-audio")?.addEventListener("click", detenerGrabacion);
         $("#btn-enviar-audio")?.addEventListener("click", enviarAudio);
         $("#input-mensaje").addEventListener("input", (ev) => {
