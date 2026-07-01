@@ -397,6 +397,26 @@ html.dark .fab { box-shadow: 0 4px 14px rgba(46,157,174,.4); }
 .avatar-44 { width: 44px; height: 44px; font-size: 16px; }
 .avatar-72 { width: 72px; height: 72px; font-size: 27px; }
 
+.avatar-img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+
+.avatar-editable { position: relative; display: inline-block; }
+.btn-foto-perfil {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 2px solid var(--panel-bg);
+    background: var(--accent);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    cursor: pointer;
+}
+
 .dot {
     position: absolute;
     bottom: 0;
@@ -559,6 +579,7 @@ html.dark .fab { box-shadow: 0 4px 14px rgba(46,157,174,.4); }
     border-radius: 10px;
     font-size: 11px;
     padding: 1px 7px;
+    cursor: pointer;
 }
 .reaccion-chip.mia { border-color: var(--accent); }
 
@@ -798,6 +819,20 @@ html.dark .fab { box-shadow: 0 4px 14px rgba(46,157,174,.4); }
 .pantalla-header h2 { font-size: 18px; font-weight: 700; letter-spacing: -.3px; }
 
 .pantalla .search-pill { margin: 0; }
+
+.zoom-img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    border-radius: 8px;
+}
+.zoom-cerrar {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: rgba(0,0,0,.4);
+    color: #fff;
+}
 
 .poll-sheet { gap: 10px; }
 .sheet-handle {

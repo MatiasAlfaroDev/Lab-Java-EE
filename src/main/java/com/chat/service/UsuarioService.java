@@ -1,9 +1,11 @@
 package com.chat.service;
 
+import com.chat.dao.AdjuntoDAO;
 import com.chat.dao.ClaveGrupoDAO;
 import com.chat.dao.UsuarioDAO;
 import com.chat.datatype.UsuarioAdminDTO;
 import com.chat.datatype.UsuarioDTO;
+import com.chat.model.Adjunto;
 import com.chat.model.Usuario;
 import com.chat.enums.TipoEstado;
 import com.chat.websocket.ChatWebSocket;
@@ -20,6 +22,9 @@ public class UsuarioService {
 
     @Inject
     private ClaveGrupoDAO claveGrupoDAO;
+
+    @Inject
+    private AdjuntoDAO adjuntoDAO;
 
     public void registrarUsuario(String nombre, String email, String password, String rol) {
 
@@ -125,7 +130,8 @@ public class UsuarioService {
                     u.getEmail(),
                     u.getRol(),
                     u.getEstado().name(),
-                    u.isBloqueado()
+                    u.isBloqueado(),
+                    u.getFotoPerfil() != null ? u.getFotoPerfil().getUrlArchivo() : null
             ))
             .toList();
     }
@@ -231,6 +237,24 @@ public class UsuarioService {
 
     public String obtenerPublicKey(int usuarioId) {
         return usuarioDAO.buscarPublicKey(usuarioId);
+    }
+
+    public void actualizarFotoPerfil(int usuarioId, String urlArchivo, String nombreArchivo, Long tamanoArchivo, String mimeType) {
+        if (urlArchivo == null || urlArchivo.isBlank())
+            throw new IllegalArgumentException("Foto inválida");
+
+        Usuario usuario = usuarioDAO.buscarPorId(usuarioId);
+        if (usuario == null) throw new IllegalArgumentException("Usuario no existe");
+
+        Adjunto adjunto = new Adjunto();
+        adjunto.setUrlArchivo(urlArchivo);
+        adjunto.setNombreArchivo(nombreArchivo);
+        adjunto.setTamanoArchivo(tamanoArchivo);
+        adjunto.setMimeType(mimeType);
+        adjuntoDAO.guardar(adjunto);
+
+        usuario.setFotoPerfil(adjunto);
+        usuarioDAO.actualizar(usuario);
     }
 
 }

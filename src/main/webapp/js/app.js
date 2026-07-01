@@ -26,7 +26,8 @@
         wsPing: null,
         online: false,
         groupKeys: {},    // chatId (number) → CryptoKey AES-GCM
-        pubKeyCache: {}   // userId (number) → b64 SPKI
+        pubKeyCache: {},  // userId (number) → b64 SPKI
+        miembrosPorChat: {} // chatId (number) → miembros[] (para descifrar preview de la lista)
     };
 
     const $ = (sel) => document.querySelector(sel);
@@ -130,6 +131,16 @@
         el.style.background = avatarColor(el.textContent);
     }
 
+    async function aplicarFotoAvatar(el, urlArchivo) {
+        try {
+            const res = await fetch(`api/mensajes/adjunto/${urlArchivo}`, { headers: { Authorization: state.token } });
+            if (!res.ok) throw new Error();
+            const blob = await res.blob();
+            el.style.background = "";
+            el.innerHTML = `<img class="avatar-img" src="${URL.createObjectURL(blob)}" alt="">`;
+        } catch { /* deja las iniciales */ }
+    }
+
     // ───────── Toast ─────────
     function mostrarToast(msg, tipo = "info") {
         let cont = document.getElementById("toast-container");
@@ -176,7 +187,8 @@
             nombre: u.nombre,
             email: u.email,
             rol: u.rol || "USER",
-            initials: getInitials(u.nombre)
+            initials: getInitials(u.nombre),
+            fotoPerfilUrl: u.fotoPerfilUrl || null
         };
         localStorage.setItem("token", state.token);
         localStorage.setItem("usuario", JSON.stringify(state.usuario));
@@ -362,7 +374,26 @@
         } catch {
             return;
         }
+        await Promise.all(state.chats.map(descifrarPreviewChat));
         renderChats();
+    }
+
+    // El servidor no puede descifrar el último mensaje (E2E); se descifra acá para el preview de la lista.
+    async function descifrarPreviewChat(chat) {
+        if (!chat.lastMsg) { chat._lastMsgPlain = chat.lastMsg; return; }
+        try {
+            if (chat.tipo === "GRUPO") {
+                const gk = await getGroupKey(chat.id);
+                chat._lastMsgPlain = gk ? await Crypto.decryptGroup(chat.lastMsg, gk) : chat.lastMsg;
+            } else {
+                if (!state.miembrosPorChat[chat.id]) {
+                    state.miembrosPorChat[chat.id] = await api("GET", `api/chats/${chat.id}/miembros`);
+                }
+                const otro = state.miembrosPorChat[chat.id].find(m => m.id !== state.usuario.id);
+                const pub = otro ? await getPubKey(otro.id) : null;
+                chat._lastMsgPlain = pub ? await Crypto.decryptDirect(chat.lastMsg, pub) : chat.lastMsg;
+            }
+        } catch { chat._lastMsgPlain = chat.lastMsg; }
     }
 
     function renderChats() {
@@ -378,7 +409,8 @@
 
         for (const chat of visibles) {
             const nombre = chat.nombre && chat.nombre.trim() ? chat.nombre : "Chat sin nombre";
-            const preview = chat.lastMsg && chat.lastMsg.trim() ? chat.lastMsg : "Sin mensajes aún";
+            const previewTexto = chat._lastMsgPlain ?? chat.lastMsg;
+            const preview = previewTexto && previewTexto.trim() ? previewTexto : "Sin mensajes aún";
 
             const li = document.createElement("li");
             li.className = "chat-row" + (state.chatActual?.id === chat.id ? " activo" : "");
@@ -513,6 +545,21 @@
                     m._plain = otherPub ? await Crypto.decryptDirect(m.contenido, otherPub) : null;
                 }
             } catch { m._plain = null; }
+
+            if (m.parentPreview) {
+                const parent = state.mensajes.find(p => p.id === m.parentId);
+                if (parent) {
+                    m.parentPreview._plain = parent._plain ?? parent.contenido;
+                } else {
+                    try {
+                        m.parentPreview._plain = esGrupo
+                            ? await Crypto.decryptGroup(m.parentPreview.contenido, await getGroupKey(chatId))
+                            : await Crypto.decryptDirect(m.parentPreview.contenido, await getPubKey(m.sender_id === state.usuario.id
+                                ? state.miembros?.find(x => x.id !== state.usuario.id)?.id
+                                : m.sender_id));
+                    } catch { m.parentPreview._plain = m.parentPreview.contenido; }
+                }
+            }
         }
 
         const zona = $("#zona-mensajes");
@@ -676,7 +723,7 @@
             autor.textContent = m.parentPreview.sender_username;
             const texto = document.createElement("span");
             texto.className = "quote-texto";
-            texto.textContent = m.parentPreview.contenido;
+            texto.textContent = m.parentPreview._plain ?? m.parentPreview.contenido;
             quote.append(autor, texto);
             bubble.appendChild(quote);
         }
@@ -710,7 +757,9 @@
                         const decBlob = await Crypto.decryptFile(ciphertextB64, parsed.fileKeyB64);
                         if (!decBlob) { mostrarToast("No se pudo descifrar el archivo", "error"); return; }
                         const typedBlob = new Blob([await decBlob.arrayBuffer()], { type: parsed.mimeType });
-                        window.open(URL.createObjectURL(typedBlob), "_blank");
+                        const url = URL.createObjectURL(typedBlob);
+                        if (parsed.mimeType?.startsWith("image/")) mostrarZoomImagen(url);
+                        else window.open(url, "_blank");
                     } catch (e) { mostrarToast(e.message, "error"); }
                 });
             } else {
@@ -829,6 +878,11 @@
                     chip.className = "reaccion-chip" + (g.mia ? " mia" : "");
                     chip.textContent = g.count > 1 ? `${emoji} ${g.count}` : emoji;
                     chip.title = g.nombres.join(", ");
+                    // tocar tu propia reacción la quita (mismo emoji = toggle en el backend)
+                    chip.addEventListener("click", (ev) => {
+                        ev.stopPropagation();
+                        reaccionar(m.id, emoji);
+                    });
                     fila.appendChild(chip);
                 }
                 bubble.appendChild(fila);
@@ -882,7 +936,7 @@
         };
 
         item("Responder", "arrow-undo-outline", () => iniciarRespuesta(m));
-        if (esMio && !m.eliminado) item("Reenviar", "arrow-redo-outline", () => abrirModalReenviar(m.id));
+        if (!m.eliminado) item("Reenviar", "arrow-redo-outline", () => abrirModalReenviar(m.id));
         if (esMio && m.tipo === "TEXTO" && !m.eliminado) item("Editar", "pencil-outline", () => iniciarEdicion(m));
         item("Eliminar para mí", "trash-outline", () => eliminarParaMi(m.id), true);
         if (esMio) item("Eliminar para todos", "trash-outline", () => eliminarParaTodos(m.id), true);
@@ -1011,7 +1065,11 @@
 
         const url = URL.createObjectURL(blob);
 
-        if (esImagen || esVideo) {
+        if (esImagen) {
+
+            mostrarZoomImagen(url);
+
+        } else if (esVideo) {
 
             window.open(url, "_blank");
 
@@ -1047,7 +1105,7 @@
         state.editando = m;
         $("#barra-edicion").hidden = false;
         const input = $("#input-mensaje");
-        input.value = m.contenido;
+        input.value = m.cifrado ? (m._plain ?? "") : m.contenido;
         autoResizeTextarea(input);
         actualizarBotonEnviar();
         renderMensajes();
@@ -1372,6 +1430,7 @@
     function abrirPerfil() {
         const u = state.usuario;
         setAvatar($("#perfil-avatar"), u.nombre, u.initials);
+        if (u.fotoPerfilUrl) aplicarFotoAvatar($("#perfil-avatar"), u.fotoPerfilUrl);
         $("#perfil-nombre").textContent = u.nombre;
         $("#perfil-email").textContent = u.email;
         const rol = $("#perfil-rol");
@@ -1626,45 +1685,60 @@
 
         for (const chat of state.chats) {
             const nombre = chat.nombre || "Chat";
-            const li = filaPersona({ nombre, email: chat.lastMsg || "" , initials: nombre.slice(0,2).toUpperCase()});
+            const li = filaPersona({ nombre, email: chat._lastMsgPlain ?? chat.lastMsg ?? "" , initials: nombre.slice(0,2).toUpperCase()});
             li.addEventListener("click", async () => {
                 try {
                     // 1. Encontrar el mensaje original en memoria
                     const original = state.mensajes.find(m => m.id === state.reenviarId);
                     if (!original) throw new Error("Mensaje no encontrado en pantalla");
 
-                    // 2. Obtener el texto plano (ya descifrado en m._plain, o plano si no era cifrado)
-                    const textoPlano = original.cifrado ? original._plain : original.contenido;
-                    if (textoPlano == null) throw new Error("No se puede descifrar el mensaje original");
-
                     const chatDestino = chat; // 'chat' viene del closure del for
                     const esGrupoDestino = chatDestino.tipo === "GRUPO";
+                    const esAdjunto = ["ARCHIVO", "IMAGEN", "VIDEO", "AUDIO"].includes(original.tipo) && original.adjunto;
 
-                    // 3. Cifrar para el chat destino
-                    let payload = textoPlano;
-                    let cifrado = false;
-                    if (esGrupoDestino) {
-                        const gk = await getGroupKey(chatDestino.id);
-                        if (gk) { payload = await Crypto.encryptGroup(textoPlano, gk); cifrado = true; }
+                    if (esAdjunto) {
+                        // Los adjuntos hoy se suben sin cifrar (misma URL/mimeType que el original);
+                        // solo se reenvía la referencia, no hay texto que cifrar.
+                        await api("POST", "api/mensajes/enviar", {
+                            chatId: chatDestino.id,
+                            contenido: original.adjunto.urlArchivo,
+                            tipo: original.tipo,
+                            nombreArchivo: original.adjunto.nombreArchivo,
+                            tamanoArchivo: original.adjunto.tamanoArchivo,
+                            mimeType: original.adjunto.mimeType,
+                            cifrado: false
+                        });
                     } else {
-                        const ms = await api("GET", `api/chats/${chatDestino.id}/miembros`);
-                        const otro = ms.find(m => m.id !== state.usuario.id);
-                        if (otro) {
-                            const pub = await getPubKey(otro.id);
-                            if (pub) { payload = await Crypto.encryptDirect(textoPlano, pub); cifrado = true; }
-                        }
-                    }
+                        // 2. Obtener el texto plano (ya descifrado en m._plain, o plano si no era cifrado)
+                        const textoPlano = original.cifrado ? original._plain : original.contenido;
+                        if (textoPlano == null) throw new Error("No se puede descifrar el mensaje original");
 
-                    // 4. Enviar como mensaje normal (el servidor lo ve como un mensaje nuevo)
-                    if (!cifrado) {
-                        throw new Error("No se puede cifrar: destinatario sin clave E2E registrada");
+                        // 3. Cifrar para el chat destino
+                        let payload = textoPlano;
+                        let cifrado = false;
+                        if (esGrupoDestino) {
+                            const gk = await getGroupKey(chatDestino.id);
+                            if (gk) { payload = await Crypto.encryptGroup(textoPlano, gk); cifrado = true; }
+                        } else {
+                            const ms = await api("GET", `api/chats/${chatDestino.id}/miembros`);
+                            const otro = ms.find(m => m.id !== state.usuario.id);
+                            if (otro) {
+                                const pub = await getPubKey(otro.id);
+                                if (pub) { payload = await Crypto.encryptDirect(textoPlano, pub); cifrado = true; }
+                            }
+                        }
+
+                        // 4. Enviar como mensaje normal (el servidor lo ve como un mensaje nuevo)
+                        if (!cifrado) {
+                            throw new Error("No se puede cifrar: destinatario sin clave E2E registrada");
+                        }
+                        await api("POST", "api/mensajes/enviar", {
+                            chatId: chatDestino.id,
+                            contenido: payload,
+                            tipo: original.tipo || "TEXTO",
+                            cifrado
+                        });
                     }
-                    await api("POST", "api/mensajes/enviar", {
-                        chatId: chatDestino.id,
-                        contenido: payload,
-                        tipo: original.tipo || "TEXTO",
-                        cifrado
-                    });
 
                     $("#modal-reenviar").hidden = true;
                     if (state.chatActual?.id === chatDestino.id) await cargarMensajes(chatDestino.id);
@@ -1681,6 +1755,11 @@
     // ───────── Overlays ─────────
     function cerrarOverlays() {
         document.querySelectorAll(".overlay").forEach(o => o.hidden = true);
+    }
+
+    function mostrarZoomImagen(url) {
+        $("#zoom-img").src = url;
+        $("#modal-zoom").hidden = false;
     }
 
     // ───────── E2E helpers ─────────
@@ -1734,6 +1813,7 @@
         $("#vista-app").hidden = false;
 
         setAvatar($("#mi-avatar"), state.usuario.nombre, state.usuario.initials);
+        if (state.usuario.fotoPerfilUrl) aplicarFotoAvatar($("#mi-avatar"), state.usuario.fotoPerfilUrl);
 
         if (state.usuario.rol === "ADMIN") {
             $(".search-pill").hidden = true;
@@ -1920,6 +2000,20 @@
 
         // sidebar
         $("#btn-perfil").addEventListener("click", abrirPerfil);
+        $("#btn-foto-perfil").addEventListener("click", () => $("#input-foto-perfil").click());
+        $("#input-foto-perfil").addEventListener("change", async (ev) => {
+            const file = ev.target.files[0];
+            ev.target.value = "";
+            if (!file) return;
+            try {
+                const archivo = await subirAdjunto(file);
+                await api("PUT", "api/usuarios/foto-perfil", archivo);
+                state.usuario.fotoPerfilUrl = archivo.urlArchivo;
+                localStorage.setItem("usuario", JSON.stringify(state.usuario));
+                aplicarFotoAvatar($("#perfil-avatar"), archivo.urlArchivo);
+                aplicarFotoAvatar($("#mi-avatar"), archivo.urlArchivo);
+            } catch (e) { mostrarToast("No se pudo actualizar la foto: " + e.message, "error"); }
+        });
         $("#btn-ajustes").addEventListener("click", () => {
             cerrarOverlays();
             renderTemaSegmented();

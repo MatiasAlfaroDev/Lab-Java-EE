@@ -75,7 +75,8 @@ public class UsuarioController {
                 usuario.getEmail(),
                 usuario.getRol(),
                 usuario.getEstado().name(),
-                usuario.isBloqueado()
+                usuario.isBloqueado(),
+                usuario.getFotoPerfil() != null ? usuario.getFotoPerfil().getUrlArchivo() : null
             );
 
             String token = tokenService.generarToken(usuario);
@@ -237,6 +238,32 @@ public class UsuarioController {
             Long userId = tokenService.validarToken(token);
             String clavePub = body.get("clavePub");
             usuarioService.guardarPublicKey(userId.intValue(), clavePub);
+            return Response.ok().build();
+        } catch (IllegalArgumentException e) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                           .entity(e.getMessage()).build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.UNAUTHORIZED)
+                           .entity("Token inválido").build();
+        }
+    }
+
+    @PUT
+    @Path("/foto-perfil")
+    public Response actualizarFotoPerfil(
+        java.util.Map<String, Object> body,
+        @HeaderParam("Authorization") String token
+    ) {
+        try {
+            Long userId = tokenService.validarToken(token);
+            Object tamano = body.get("tamanoArchivo");
+            usuarioService.actualizarFotoPerfil(
+                userId.intValue(),
+                (String) body.get("urlArchivo"),
+                (String) body.get("nombreArchivo"),
+                tamano != null ? Long.valueOf(tamano.toString()) : null,
+                (String) body.get("mimeType")
+            );
             return Response.ok().build();
         } catch (IllegalArgumentException e) {
             return Response.status(Response.Status.BAD_REQUEST)

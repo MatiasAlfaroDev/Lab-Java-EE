@@ -38,7 +38,6 @@
                     <input id="login-password" type="password" placeholder="••••••••" autocomplete="current-password" required>
                 </label>
                 <button type="submit" class="btn-primario btn-full">Iniciar sesión</button>
-                <button type="button" class="btn-ghost btn-full">Iniciar sesión con SSO</button>
             </form>
 
             <form id="form-registro" class="auth-form" hidden>
@@ -335,7 +334,13 @@
             </header>
 
             <div class="perfil-top">
-                <span class="avatar avatar-72" id="perfil-avatar"></span>
+                <span class="avatar-editable">
+                    <span class="avatar avatar-72" id="perfil-avatar"></span>
+                    <button type="button" id="btn-foto-perfil" class="btn-foto-perfil" title="Cambiar foto">
+                        <ion-icon name="camera-outline"></ion-icon>
+                    </button>
+                    <input type="file" id="input-foto-perfil" accept="image/*" hidden>
+                </span>
                 <p class="perfil-nombre" id="perfil-nombre"></p>
                 <p class="perfil-email" id="perfil-email"></p>
                 <span class="tag" id="perfil-rol"></span>
@@ -360,14 +365,6 @@
                 </div>
             </div>
 
-            <div class="card">
-                <p class="section-label">SEGURIDAD</p>
-                <div class="fila fila-ultima">
-                    <ion-icon name="shield-outline"></ion-icon>
-                    <span class="fila-label">Reconfigurar MFA</span>
-                    <ion-icon name="chevron-forward-outline"></ion-icon>
-                </div>
-            </div>
             <button id="btn-logout" class="btn-peligro btn-full">
                 <ion-icon name="log-out-outline"></ion-icon> Cerrar sesión
             </button>
@@ -466,6 +463,12 @@
             <p class="form-error" id="reenviar-error"></p>
             <ul id="lista-reenviar" class="lista-personas"></ul>
         </div>
+    </div>
+
+    <!-- ═══════════ Zoom de imagen ═══════════ -->
+    <div id="modal-zoom" class="overlay overlay-blur" hidden>
+        <button class="btn-icono cerrar zoom-cerrar" data-overlay="modal-zoom"><ion-icon name="close-outline"></ion-icon></button>
+        <img id="zoom-img" class="zoom-img" alt="">
     </div>
 
     <!-- ═══════════ Nueva encuesta ═══════════ -->

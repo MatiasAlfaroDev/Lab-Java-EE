@@ -44,6 +44,10 @@ public class Usuario {
     @Column(nullable = false)
     private boolean bloqueado = false;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "foto_perfil_id")
+    private Adjunto fotoPerfil;
+
     @OneToMany(mappedBy = "usuario")
     private List<MiembroChat> chatsIntegrados;
 
@@ -80,5 +84,8 @@ public class Usuario {
 
     public String getPublicKey() { return publicKey; }
     public void setPublicKey(String publicKey) { this.publicKey = publicKey; }
+
+    public Adjunto getFotoPerfil() { return fotoPerfil; }
+    public void setFotoPerfil(Adjunto fotoPerfil) { this.fotoPerfil = fotoPerfil; }
 
 }

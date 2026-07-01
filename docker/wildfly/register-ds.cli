@@ -3,4 +3,6 @@ module add --name=org.postgresql --resources=/tmp/postgresql.jar --dependencies=
 embed-server --server-config=standalone.xml
 /subsystem=datasources/jdbc-driver=postgresql:add(driver-name=postgresql,driver-module-name=org.postgresql,driver-class-name=org.postgresql.Driver)
 data-source add --name=ChatDS --jndi-name=java:/jdbc/ChatDS --driver-name=postgresql --connection-url=${db.url} --user-name=${db.user} --password=${db.password} --min-pool-size=1 --max-pool-size=10 --enabled=true --use-java-context=true
+# Undertow's default max-post-size (10MB) rechaza videos subidos como JSON base64 (~33% mas grandes que el archivo real).
+/subsystem=undertow/server=default-server/http-listener=default:write-attribute(name=max-post-size, value=209715200)
 stop-embedded-server
