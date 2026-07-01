@@ -468,6 +468,37 @@
         </div>
     </div>
 
+    <!-- ═══════════ Nueva encuesta ═══════════ -->
+    <div id="modal-poll" class="overlay" hidden>
+        <div class="pantalla poll-sheet">
+            <div class="sheet-handle"></div>
+            <header class="pantalla-header">
+                <h2>Nueva encuesta</h2>
+                <button class="btn-icono cerrar" data-overlay="modal-poll"><ion-icon name="close-outline"></ion-icon></button>
+            </header>
+
+            <label class="campo">
+                <span class="campo-label">PREGUNTA</span>
+                <input id="poll-pregunta" type="text" placeholder="¿Qué quieres preguntar?" maxlength="200">
+            </label>
+
+            <p class="section-label" style="margin-top: 4px;">OPCIONES</p>
+            <div id="poll-opciones" class="poll-opciones"></div>
+            <button id="poll-agregar-opcion" class="link-accent" type="button">
+                <ion-icon name="add-circle-outline"></ion-icon> Agregar opción
+            </button>
+
+            <label class="poll-anonima">
+                <input type="checkbox" id="poll-anonima">
+                Votación anónima
+            </label>
+
+            <p class="form-error" id="poll-error"></p>
+
+            <button id="poll-crear" class="btn-primario btn-full">Crear encuesta</button>
+        </div>
+    </div>
+
     <script src="js/crypto.js"></script>
     <script src="js/app.js"></script>
 </body>

@@ -799,6 +799,40 @@ html.dark .fab { box-shadow: 0 4px 14px rgba(46,157,174,.4); }
 
 .pantalla .search-pill { margin: 0; }
 
+.poll-sheet { gap: 10px; }
+.sheet-handle {
+    width: 36px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--border);
+    align-self: center;
+    margin-bottom: 4px;
+}
+.poll-opciones { display: flex; flex-direction: column; gap: 8px; }
+.poll-opcion-fila { display: flex; align-items: center; gap: 8px; }
+.poll-opcion-fila input {
+    flex: 1;
+    height: 44px;
+    padding: 0 14px;
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 13px;
+    outline: none;
+}
+.poll-opcion-fila input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--ring); }
+.poll-opcion-fila .quitar-opcion { color: var(--text-muted); flex-shrink: 0; }
+.poll-opcion-fila .quitar-opcion:hover { color: var(--error); }
+.poll-anonima {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text);
+    padding: 4px 0;
+}
+
 /* opción de nuevo chat */
 .opcion-card {
     display: flex;

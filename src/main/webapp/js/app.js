@@ -77,6 +77,13 @@
     // constants/emojis.ts
     const QUICK_EMOJIS = ["👍", "❤️", "😂", "😮", "😢", "🔥", "👏", "✅"];
 
+    // Rutas reales de EncuestaController.java (confirmadas leyendo el backend).
+    const ENCUESTA_ENDPOINTS = {
+        crear:      (chatId) => `api/encuestas/chat/${chatId}`,
+        votar:      (pollId, opcionId) => `api/encuestas/${pollId}/opciones/${opcionId}/votar`,
+        resultados: (pollId) => `api/encuestas/${pollId}/resultados`,
+    };
+
     // utils/avatar.ts
     const AVATAR_COLORS = [
         "#1A3558", "#2D1B69", "#0C3344", "#1B3A26",
@@ -1026,9 +1033,6 @@
         el.style.height = Math.min(el.scrollHeight, 120) + "px";
     }
 
-    // ponytail: stub until Task 8 implements the real poll composer
-    function abrirPollComposer() { mostrarToast("Próximamente", "info"); }
-
     // ───────── Grabación de audio ─────────
     const rec = { mediaRecorder: null, chunks: [], stream: null, timer: null, segundos: 0, pausado: false };
 
@@ -1477,6 +1481,73 @@
         }
     }
 
+    // ───────── Encuesta (composer) ─────────
+    let pollOpciones = ["", ""];
+
+    function renderPollOpciones() {
+        const cont = $("#poll-opciones");
+        cont.innerHTML = "";
+        pollOpciones.forEach((valor, i) => {
+            const fila = document.createElement("div");
+            fila.className = "poll-opcion-fila";
+            const input = document.createElement("input");
+            input.type = "text";
+            input.placeholder = `Opción ${i + 1}`;
+            input.maxLength = 100;
+            input.value = valor;
+            input.addEventListener("input", () => { pollOpciones[i] = input.value; });
+            fila.appendChild(input);
+            if (pollOpciones.length > 2) {
+                const quitar = document.createElement("button");
+                quitar.type = "button";
+                quitar.className = "btn-icono quitar-opcion";
+                quitar.innerHTML = '<ion-icon name="remove-circle-outline"></ion-icon>';
+                quitar.addEventListener("click", () => {
+                    pollOpciones.splice(i, 1);
+                    renderPollOpciones();
+                });
+                fila.appendChild(quitar);
+            }
+            cont.appendChild(fila);
+        });
+        $("#poll-agregar-opcion").hidden = pollOpciones.length >= 10;
+    }
+
+    function abrirPollComposer() {
+        if (!state.chatActual) return;
+        pollOpciones = ["", ""];
+        $("#poll-pregunta").value = "";
+        $("#poll-anonima").checked = false;
+        $("#poll-error").textContent = "";
+        renderPollOpciones();
+        cerrarOverlays();
+        $("#modal-poll").hidden = false;
+        $("#poll-pregunta").focus();
+    }
+
+    async function crearEncuesta() {
+        const errorEl = $("#poll-error");
+        errorEl.textContent = "";
+        const pregunta = $("#poll-pregunta").value.trim();
+        const limpias = pollOpciones.map(o => o.trim()).filter(Boolean);
+
+        if (!pregunta) { errorEl.textContent = "Escribe una pregunta para la encuesta"; return; }
+        if (limpias.length < 2) { errorEl.textContent = "Agrega al menos dos opciones"; return; }
+
+        try {
+            await api("POST", ENCUESTA_ENDPOINTS.crear(state.chatActual.id), {
+                pregunta,
+                opciones: limpias,
+                anonima: $("#poll-anonima").checked
+            });
+            $("#modal-poll").hidden = true;
+            await cargarMensajes(state.chatActual.id);
+            cargarChats();
+        } catch (e) {
+            errorEl.textContent = "No se pudo crear la encuesta: " + e.message;
+        }
+    }
+
     // ───────── Reenviar ─────────
     function abrirModalReenviar(mensajeId) {
         state.reenviarId = mensajeId;
@@ -1843,6 +1914,11 @@
             $("#menu-adjuntos").hidden = true;
             abrirPollComposer();
         });
+
+        $("#poll-agregar-opcion").addEventListener("click", () => {
+            if (pollOpciones.length < 10) { pollOpciones.push(""); renderPollOpciones(); }
+        });
+        $("#poll-crear").addEventListener("click", crearEncuesta);
 
         inputAdjunto.addEventListener("change", async (ev) => {
             const file = ev.target.files[0];
