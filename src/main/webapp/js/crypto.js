@@ -13,6 +13,10 @@ const Crypto = (() => {
   // clave pública registrada en el server.
   let currentUserId = null;
   const keyName = () => currentUserId != null ? `ecdhPriv:${currentUserId}` : "ecdhPriv";
+  // La privada se guarda como CryptoKey no exportable: no hay forma de re-derivar su
+  // pública después. Se cachea la pública aparte para poder re-subirla en logins
+  // futuros (p. ej. si cambia el formato de export, como con el fix de raw vs spki).
+  const pubKeyName = () => currentUserId != null ? `ecdhPub:${currentUserId}` : "ecdhPub";
 
   // ── IndexedDB helpers ──────────────────────────────────────────────
   function openDB() {
@@ -70,10 +74,15 @@ const Crypto = (() => {
     return { iv: buf.slice(0, 12), ct: buf.slice(12).buffer };
   }
 
-  // ── Importar clave pública SPKI ────────────────────────────────────
+  // ── Importar clave pública (punto EC crudo sin comprimir, 65 bytes) ────
+  // El cliente Expo (noble/@noble/curves) no habla SPKI/DER: trabaja con el punto
+  // crudo. Usar "raw" en vez de "spki" es lo que ambos clientes pueden producir e
+  // importar sin librerías extra — con "spki" la pública de Expo (33 o 65 bytes,
+  // sin envoltorio ASN.1) hacía tirar DataError acá antes de llegar siquiera a
+  // derivar la clave AES.
   async function importPub(b64) {
     return crypto.subtle.importKey(
-      "spki", b64ToBytes(b64),
+      "raw", b64ToBytes(b64),
       { name: "ECDH", namedCurve: "P-256" },
       true, []
     );
@@ -102,7 +111,15 @@ const Crypto = (() => {
   async function ensureKeyPair(apiFn, userId) {
     currentUserId = userId;
     const existing = await dbGet(keyName());
-    if (existing) return; // ya existe
+    if (existing) {
+      // Ya existe la privada: re-sube la pública cacheada por si el server la perdió
+      // o el formato cambió. Si no hay pública cacheada (instalación de antes de este
+      // fix, formato SPKI viejo), no hay forma de recuperarla de la privada no
+      // exportable — queda como estaba hasta que se limpie el IndexedDB y regenere.
+      const cachedPub = await dbGet(pubKeyName());
+      if (cachedPub) await apiFn("PUT", "api/usuarios/clave-publica", { clavePub: cachedPub });
+      return;
+    }
 
     const pair = await crypto.subtle.generateKey(
       { name: "ECDH", namedCurve: "P-256" },
@@ -111,8 +128,9 @@ const Crypto = (() => {
     );
     await dbPut(keyName(), pair.privateKey);
 
-    const pubRaw = await crypto.subtle.exportKey("spki", pair.publicKey);
+    const pubRaw = await crypto.subtle.exportKey("raw", pair.publicKey);
     const pubB64 = bytesToB64(pubRaw);
+    await dbPut(pubKeyName(), pubB64);
     await apiFn("PUT", "api/usuarios/clave-publica", { clavePub: pubB64 });
   }
 
@@ -254,8 +272,8 @@ const Crypto = (() => {
     try {
       const a = await crypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, false, ["deriveKey"]);
       const b = await crypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, false, ["deriveKey"]);
-      const aPubRaw = await crypto.subtle.exportKey("spki", a.publicKey);
-      const bPubRaw = await crypto.subtle.exportKey("spki", b.publicKey);
+      const aPubRaw = await crypto.subtle.exportKey("raw", a.publicKey);
+      const bPubRaw = await crypto.subtle.exportKey("raw", b.publicKey);
       const aPubB64 = bytesToB64(aPubRaw);
       const bPubB64 = bytesToB64(bPubRaw);
 
@@ -271,7 +289,7 @@ const Crypto = (() => {
 
       // Test 2: clave equivocada falla
       const wrong = await crypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, false, ["deriveKey"]);
-      const wrongPubRaw = await crypto.subtle.exportKey("spki", wrong.publicKey);
+      const wrongPubRaw = await crypto.subtle.exportKey("raw", wrong.publicKey);
       await dbPut("ecdhPriv", b.privateKey);
       const res = await decryptDirect(ct, bytesToB64(wrongPubRaw));
       if (res !== null) throw new Error("debería devolver null con clave incorrecta");
@@ -294,8 +312,8 @@ const Crypto = (() => {
     try {
       const a = await crypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, false, ["deriveKey"]);
       const b = await crypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, false, ["deriveKey"]);
-      const aPubRaw = await crypto.subtle.exportKey("spki", a.publicKey);
-      const bPubRaw = await crypto.subtle.exportKey("spki", b.publicKey);
+      const aPubRaw = await crypto.subtle.exportKey("raw", a.publicKey);
+      const bPubRaw = await crypto.subtle.exportKey("raw", b.publicKey);
 
       const gk = await generateGroupKey();
       const origPriv = await dbGet("ecdhPriv");
