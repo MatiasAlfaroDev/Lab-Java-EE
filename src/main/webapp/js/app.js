@@ -427,7 +427,6 @@
         typingUsers.clear();
         $("#typing-indicator").hidden = true;
         cancelarEdicion();
-        $("#emoji-picker").hidden = true;
         // abort any active recording when switching chats
         if (rec.mediaRecorder && rec.mediaRecorder.state !== "inactive") detenerGrabacion();
         $("#panel-vacio").hidden = true;
@@ -852,6 +851,7 @@
                 }
             }
             input.value = "";
+            autoResizeTextarea(input);
             actualizarBotonEnviar();
             await cargarMensajes(chatId);
             cargarChats();
@@ -924,6 +924,7 @@
         $("#barra-edicion").hidden = false;
         const input = $("#input-mensaje");
         input.value = m.contenido;
+        autoResizeTextarea(input);
         actualizarBotonEnviar();
         renderMensajes();
         $("#zona-mensajes").scrollTop = $("#zona-mensajes").scrollHeight;
@@ -933,6 +934,7 @@
     function cancelarEdicion() {
         if (state.editando) {
             $("#input-mensaje").value = "";
+            autoResizeTextarea($("#input-mensaje"));
             state.editando = null;
             renderMensajes();
         }
@@ -970,6 +972,14 @@
         const btnMic = $("#btn-mic");
         if (btnMic) btnMic.hidden = tieneTexto;
     }
+
+    function autoResizeTextarea(el) {
+        el.style.height = "auto";
+        el.style.height = Math.min(el.scrollHeight, 120) + "px";
+    }
+
+    // ponytail: stub until Task 8 implements the real poll composer
+    function abrirPollComposer() { mostrarToast("Próximamente", "info"); }
 
     // ───────── Grabación de audio ─────────
     const rec = { mediaRecorder: null, chunks: [], stream: null, timer: null, segundos: 0 };
@@ -1045,23 +1055,6 @@
             };
             detenerGrabacion();
         });
-    }
-
-    // ───────── Emoji picker ─────────
-    function initEmojiPicker() {
-        const picker = $("#emoji-picker");
-        for (const e of QUICK_EMOJIS) {
-            const b = document.createElement("button");
-            b.textContent = e;
-            b.addEventListener("click", () => {
-                const input = $("#input-mensaje");
-                input.value += e;
-                picker.hidden = true;
-                actualizarBotonEnviar();
-                input.focus();
-            });
-            picker.appendChild(b);
-        }
     }
 
     // ───────── Personas (filas reutilizables) ─────────
@@ -1737,21 +1730,40 @@
         $("#btn-enviar-audio")?.addEventListener("click", enviarAudio);
         $("#input-mensaje").addEventListener("input", (ev) => {
             actualizarBotonEnviar(ev);
+            autoResizeTextarea(ev.target);
             enviarTyping();
         });
         $("#input-mensaje").addEventListener("keydown", (ev) => {
             if (ev.key === "Enter" && !ev.shiftKey) { ev.preventDefault(); enviarMensaje(); }
-            if (ev.key === "Escape") { cancelarEdicion(); $("#emoji-picker").hidden = true; }
+            if (ev.key === "Escape") cancelarEdicion();
         });
         $("#cancelar-edicion").addEventListener("click", cancelarEdicion);
-        $("#btn-emoji").addEventListener("click", (ev) => {
+
+        $("#btn-adjuntos").addEventListener("click", (ev) => {
             ev.stopPropagation();
-            $("#emoji-picker").hidden = !$("#emoji-picker").hidden;
+            $("#menu-adjuntos").hidden = !$("#menu-adjuntos").hidden;
         });
-        $("#btn-adjunto").addEventListener("click", () => {
-            $("#input-adjunto").click();
+        document.addEventListener("click", (ev) => {
+            if (!ev.target.closest("#menu-adjuntos") && !ev.target.closest("#btn-adjuntos")) {
+                $("#menu-adjuntos").hidden = true;
+            }
         });
-        $("#input-adjunto").addEventListener("change", async (ev) => {
+
+        const inputAdjunto = $("#input-adjunto");
+        function abrirSelector(accept) {
+            $("#menu-adjuntos").hidden = true;
+            inputAdjunto.accept = accept;
+            inputAdjunto.click();
+        }
+        $("#adj-documento").addEventListener("click", () => abrirSelector(""));
+        $("#adj-fotos").addEventListener("click", () => abrirSelector("image/*,video/*"));
+        $("#adj-audio").addEventListener("click", () => abrirSelector("audio/*"));
+        $("#adj-encuesta").addEventListener("click", () => {
+            $("#menu-adjuntos").hidden = true;
+            abrirPollComposer();
+        });
+
+        inputAdjunto.addEventListener("change", async (ev) => {
             const file = ev.target.files[0];
             ev.target.value = "";
             if (!file || !state.chatActual) return;
@@ -1772,11 +1784,6 @@
                 cargarChats();
             } catch (e) {
                 mostrarToast("Error enviando archivo: " + e.message, "error");
-            }
-        });
-        document.addEventListener("click", (ev) => {
-            if (!ev.target.closest("#emoji-picker") && !ev.target.closest("#btn-emoji")) {
-                $("#emoji-picker").hidden = true;
             }
         });
 
@@ -1820,7 +1827,6 @@
     // ───────── Init ─────────
     Theme.init();
     initEventos();
-    initEmojiPicker();
     if (state.token && state.usuario) {
         api("GET", "api/chats")
             .then(() => entrarApp())

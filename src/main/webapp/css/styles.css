@@ -570,84 +570,102 @@ html.dark .fab { box-shadow: 0 4px 14px rgba(46,157,174,.4); }
     padding: 10px;
 }
 
-.emoji-picker {
-    position: absolute;
-    bottom: calc(100% + 8px);
-    left: 16px;
-    display: flex;
-    gap: 8px;
-    background: var(--panel-bg);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 12px;
-    box-shadow: 0 8px 24px rgba(0,0,0,.45);
-    z-index: 20;
-}
-.emoji-picker button { font-size: 26px; padding: 6px; border-radius: 8px; }
-.emoji-picker button:hover { background: var(--hover); }
-
 .barra-edicion {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0 6px 6px;
+    border-left: 3px solid var(--accent);
+    background: var(--hover);
+    border-radius: 6px;
+    padding: 8px 10px;
+    margin-bottom: 8px;
 }
 .barra-edicion span { font-size: 12px; color: var(--text-muted); }
-.barra-edicion button { font-size: 12px; color: var(--accent); }
+.barra-edicion button { font-size: 12px; font-weight: 600; color: var(--accent); }
 
-.composer {
+.composer { display: flex; align-items: flex-end; gap: 6px; }
+.composer > .menu-adjuntos-wrap > .btn-icono { width: 48px; height: 48px; }
+.composer > .menu-adjuntos-wrap > .btn-icono ion-icon { font-size: 28px; }
+
+.menu-adjuntos-wrap { position: relative; }
+.menu-adjuntos {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 0;
+    width: 220px;
+    background: var(--panel-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 6px;
+    box-shadow: var(--shadow-card);
+    z-index: 20;
+}
+.adjunto-opcion {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 12px;
+    width: 100%;
+    padding: 8px;
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--text);
+    text-align: left;
 }
-.composer > .btn-icono ion-icon { font-size: 28px; }
+.adjunto-opcion:hover { background: var(--hover); }
+.adjunto-icono {
+    width: 32px;
+    height: 32px;
+    border-radius: 9999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.adjunto-icono ion-icon { font-size: 17px; }
 
 .input-pill {
     flex: 1;
+    min-height: 48px;
+    max-height: 152px;
+    display: flex;
+    align-items: center;
     background: var(--list-bg);
     border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 10px 14px;
+    border-radius: 24px;
+    padding: 0 14px;
 }
-.input-pill input {
+.input-pill:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--ring); }
+.input-pill textarea {
     width: 100%;
+    max-height: 120px;
     background: none;
     border: none;
     outline: none;
+    resize: none;
+    overflow-y: auto;
     color: var(--text);
+    font-family: inherit;
     font-size: 13px;
+    line-height: 20px;
+    padding: 13px 0;
 }
-.input-pill input::placeholder { color: var(--text-muted); }
+.input-pill textarea::placeholder { color: var(--text-muted); }
 
-.btn-enviar {
-    width: 38px;
-    height: 38px;
-    border-radius: 19px;
-    background: rgba(59,125,255,.3);
-    color: var(--text-muted);
+.btn-enviar, .btn-mic {
+    width: 48px;
+    height: 48px;
+    border-radius: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
 }
-.btn-enviar ion-icon { font-size: 18px; }
+.btn-enviar { background: rgba(31,122,140,.3); color: var(--text-muted); }
+.btn-enviar ion-icon { font-size: 20px; }
 .btn-enviar.activo { background: var(--accent); color: #fff; }
-
-/* mic button — same shape as send, accent-filled always */
-.btn-mic {
-    width: 38px;
-    height: 38px;
-    border-radius: 19px;
-    background: var(--accent);
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    transition: background .15s;
-}
-.btn-mic ion-icon { font-size: 20px; }
-.btn-mic:hover { background: var(--accent-dark, #1D5FD8); }
+.btn-mic { background: var(--accent); color: #fff; transition: background .15s; }
+.btn-mic ion-icon { font-size: 22px; }
+.btn-mic:hover { background: var(--accent-dark); }
 
 /* recording bar — replaces composer row while grabbing */
 .barra-grabacion {
@@ -684,10 +702,24 @@ html.dark .fab { box-shadow: 0 4px 14px rgba(46,157,174,.4); }
     color: var(--error, #EF4444);
     min-width: 34px;
 }
-.rec-label {
-    font-size: 12px;
-    color: var(--text-muted);
+.rec-waveform {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    height: 18px;
+    overflow: hidden;
 }
+.rec-waveform span {
+    width: 2px;
+    flex-shrink: 0;
+    background: var(--error);
+    border-radius: 1px;
+    animation: rec-wave 1s ease-in-out infinite;
+}
+@keyframes rec-wave { 0%, 100% { height: 30%; } 50% { height: 100%; } }
+.barra-grabacion.pausada .rec-waveform span { animation-play-state: paused; opacity: .4; }
+.barra-grabacion.pausada .rec-dot { animation-play-state: paused; opacity: .4; }
 
 /* ════════════ Overlays / pantallas ════════════ */
 
