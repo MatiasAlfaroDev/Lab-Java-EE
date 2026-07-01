@@ -355,6 +355,17 @@
                 if (state.chatActual) await cargarMensajes(state.chatActual.id, { mantenerScroll: true });
                 return;
             }
+            case "GROUP_KEY_ROTATED": {
+                // sin esto, un cliente ya abierto seguía usando su clave de grupo cacheada
+                // para siempre aunque el servidor ya tuviera una nueva (podía enviar
+                // mensajes pero no leer los de nadie más, y viceversa)
+                delete state.groupKeys[chatId];
+                if (state.chatActual && chatId === state.chatActual.id) {
+                    await cargarMensajes(chatId, { mantenerScroll: true });
+                }
+                cargarChats();
+                return;
+            }
             default: {
                 // mensaje nuevo: { id, chatId, remitente, remitenteId, contenido, timestamp }
                 if (data.remitenteId === undefined || data.chatId === undefined) return;

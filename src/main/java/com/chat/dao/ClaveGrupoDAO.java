@@ -1,11 +1,13 @@
 package com.chat.dao;
 
 import com.chat.model.ClaveGrupo;
+import com.chat.datatype.ClaveGrupoRequest;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
+import java.util.List;
 @ApplicationScoped
 public class ClaveGrupoDAO {
 
@@ -28,6 +30,30 @@ public class ClaveGrupoDAO {
         cg.setClaveEnvuelta(claveEnvuelta);
         cg.setVersion(version);
         em.persist(cg);
+    }
+
+    // Escribe todas las filas de una distribución en UNA sola transacción: si dos
+    // distribuciones concurrentes (dos clientes reparando a la vez, o un doble click)
+    // llegan a la vez, una queda completa y la otra completa — nunca una mezcla de
+    // filas de ambas, que dejaba a todos con claves distintas entre sí.
+    @Transactional
+    public void guardarOActualizarLote(int chatId, List<ClaveGrupoRequest.Envuelta> envueltas,
+                                        int distribuidorId, long version) {
+        for (ClaveGrupoRequest.Envuelta e : envueltas) {
+            em.createQuery(
+                "DELETE FROM ClaveGrupo c WHERE c.chatId = :chatId AND c.miembroId = :miembroId")
+              .setParameter("chatId", chatId)
+              .setParameter("miembroId", e.miembroId)
+              .executeUpdate();
+
+            ClaveGrupo cg = new ClaveGrupo();
+            cg.setChatId(chatId);
+            cg.setMiembroId(e.miembroId);
+            cg.setDistribuidorId(distribuidorId);
+            cg.setClaveEnvuelta(e.claveEnvuelta);
+            cg.setVersion(version);
+            em.persist(cg);
+        }
     }
 
     @Transactional
