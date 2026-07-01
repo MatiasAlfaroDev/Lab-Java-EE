@@ -413,7 +413,11 @@
 
             body.append(top, bottom);
             li.appendChild(body);
+            li.tabIndex = 0;
             li.addEventListener("click", () => abrirChat(chat));
+            li.addEventListener("keydown", (ev) => {
+                if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); abrirChat(chat); }
+            });
             lista.appendChild(li);
         }
     }

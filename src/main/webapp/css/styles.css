@@ -248,7 +248,7 @@ ion-icon { font-size: 20px; flex-shrink: 0; }
     position: relative;
     width: 340px;
     min-width: 280px;
-    background: var(--bg);
+    background: var(--sidebar-bg);
     border-right: 1px solid var(--border);
     display: flex;
     flex-direction: column;
@@ -373,10 +373,11 @@ ion-icon { font-size: 20px; flex-shrink: 0; }
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 14px rgba(59,125,255,.4);
+    box-shadow: 0 4px 14px rgba(31,122,140,.4);
 }
 .fab:hover { background: var(--accent-dark); }
 .fab ion-icon { font-size: 26px; }
+html.dark .fab { box-shadow: 0 4px 14px rgba(46,157,174,.4); }
 
 /* ════════════ Avatares ════════════ */
 
@@ -465,6 +466,14 @@ ion-icon { font-size: 20px; flex-shrink: 0; }
 .btn-icono:hover { color: var(--text); background: var(--hover); }
 .btn-icono-accent { color: var(--accent); }
 .btn-icono-accent:hover { color: var(--accent); }
+
+.btn-avatar:focus-visible,
+.chat-row:focus-visible,
+.persona:focus-visible,
+.btn-icono:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--ring);
+}
 
 /* ── mensajes ── */
 .zona-mensajes {
@@ -768,14 +777,18 @@ ion-icon { font-size: 20px; flex-shrink: 0; }
 .tag {
     font-size: 11px;
     font-weight: 600;
+    letter-spacing: .7px;
+    text-transform: uppercase;
     padding: 3px 10px;
-    border-radius: 10px;
+    border-radius: 9999px;
     border: 1px solid var(--text-muted);
     color: var(--text-muted);
     margin-top: 4px;
 }
-.tag.admin   { border-color: var(--accent); color: var(--accent); }
-.tag.manager { border-color: var(--online); color: var(--online); }
+.tag.admin   { background: rgba(31,122,140,.2);  border-color: rgba(31,122,140,.4);  color: var(--accent); }
+.tag.manager { background: rgba(22,163,74,.2);   border-color: rgba(22,163,74,.4);   color: var(--online); }
+html.dark .tag.admin   { background: rgba(46,157,174,.2); border-color: rgba(46,157,174,.4); color: var(--accent); }
+html.dark .tag.manager { background: rgba(34,197,94,.2);  border-color: rgba(34,197,94,.4);  color: var(--online); }
 
 .card {
     background: var(--panel-bg);
