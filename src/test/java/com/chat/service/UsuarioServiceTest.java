@@ -35,8 +35,7 @@ class UsuarioServiceTest {
         usuarioService.registrarUsuario(
                 "Juan",
                 "juan@test.com",
-                "Password1!",
-                "USER"
+                "Password1!"
         );
 
         verify(usuarioDAO, times(1))
@@ -54,8 +53,7 @@ class UsuarioServiceTest {
                 () -> usuarioService.registrarUsuario(
                         "Juan",
                         "juan@test.com",
-                        "Password1!",
-                        "USER")
+                        "Password1!")
         );
     }
 

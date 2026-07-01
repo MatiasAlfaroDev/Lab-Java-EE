@@ -26,11 +26,14 @@ public class UsuarioService {
     @Inject
     private AdjuntoDAO adjuntoDAO;
 
-    public void registrarUsuario(String nombre, String email, String password, String rol) {
+    // El rol NUNCA viene del cliente: el registro público siempre crea USER. Antes se
+    // aceptaba el rol tal cual llegaba en el body, así que cualquiera podía
+    // auto-registrarse como ADMIN mandando {"rol":"ADMIN"} directo a la API.
+    public void registrarUsuario(String nombre, String email, String password) {
 
         // 1. Validar datos
-        if (nombre == null || email == null || password == null || rol == null ||
-            nombre.isBlank() || email.isBlank() || password.isBlank() || rol.isBlank()) {
+        if (nombre == null || email == null || password == null ||
+            nombre.isBlank() || email.isBlank() || password.isBlank()) {
             throw new IllegalArgumentException("Datos inválidos");
         }
 
@@ -55,7 +58,7 @@ public class UsuarioService {
         Usuario usuario = new Usuario();
         usuario.setNombre(nombre);
         usuario.setEmail(email);
-        usuario.setRol(rol);
+        usuario.setRol("USER");
 
         // 4. Estado inicial
         usuario.setEstado(TipoEstado.OFFLINE);

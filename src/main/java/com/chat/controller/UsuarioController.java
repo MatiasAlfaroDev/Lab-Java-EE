@@ -46,8 +46,7 @@ public class UsuarioController {
             usuarioService.registrarUsuario(
                 request.getNombre(),
                 request.getEmail(),
-                request.getPassword(),
-                request.getRol()
+                request.getPassword()
             );
 
             return Response.ok("Usuario registrado").build();
