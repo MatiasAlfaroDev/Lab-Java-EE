@@ -1135,11 +1135,11 @@
         if (m.eliminado) return "Mensaje eliminado";
         const nombreArchivo = m.nombreArchivo || m.adjunto?.nombreArchivo;
         switch (m.tipo) {
-            case "AUDIO": return "🎤 Audio";
-            case "IMAGEN": return "📷 Foto";
-            case "VIDEO": return "🎥 Video";
-            case "ARCHIVO": return `📎 ${nombreArchivo || "Archivo"}`;
-            case "ENCUESTA": return "📊 Encuesta";
+            case "AUDIO": return "Audio";
+            case "IMAGEN": return "Foto";
+            case "VIDEO": return "Video";
+            case "ARCHIVO": return nombreArchivo || "Archivo";
+            case "ENCUESTA": return "Encuesta";
             default:
                 if (m._plain === null) return "[mensaje cifrado]";
                 return m._plain ?? m.contenido ?? "";
@@ -1846,7 +1846,19 @@
             const ck = await Crypto.unwrapGroupKey(data.claveEnvuelta, distribPub);
             if (ck) state.groupKeys[chatId] = ck;
             return ck;
-        } catch { return null; }
+        } catch (e) {
+            // 404 = el grupo nunca tuvo clave (creado antes del cifrado E2E, o la
+            // distribución falló): nadie puede descifrar nada hasta que alguien la genere.
+            // Auto-reparar generando y distribuyendo una nueva en vez de quedar roto para siempre.
+            if (String(e.message).includes("404")) {
+                try {
+                    const miembros = await api("GET", `api/chats/${chatId}/miembros`);
+                    await distribuirClaveGrupo(chatId, miembros);
+                    return state.groupKeys[chatId] || null;
+                } catch { return null; }
+            }
+            return null;
+        }
     }
 
     async function distribuirClaveGrupo(chatId, miembros) {
