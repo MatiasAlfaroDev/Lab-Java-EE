@@ -170,6 +170,13 @@
 
         const texto = await res.text();
         if (!res.ok) {
+            // el token vive en memoria en el server (TokenService); un redeploy/restart lo
+            // invalida aunque siga en localStorage. Si veníamos autenticados, cerrar sesión
+            // en vez de dejar cada acción fallando en silencio.
+            if (res.status === 401 && state.token) {
+                cerrarSesionLocal();
+                mostrarToast("Tu sesión expiró, iniciá sesión de nuevo", "error");
+            }
             console.log("STATUS:", res.status);
             console.log("RESPUESTA:", texto);
             throw new Error(texto || `Error ${res.status}`);

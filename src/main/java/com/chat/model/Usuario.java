@@ -44,7 +44,10 @@ public class Usuario {
     @Column(nullable = false)
     private boolean bloqueado = false;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    // EAGER: es un solo Adjunto por usuario (no colección), y el DTO siempre necesita su
+    // URL. LAZY rompía con "no Session" cada vez que se leía fuera de una transacción
+    // (login, listarMiembros), porque Usuario se consulta en muchos sitios no @Transactional.
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "foto_perfil_id")
     private Adjunto fotoPerfil;
 
