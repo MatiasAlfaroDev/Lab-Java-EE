@@ -393,16 +393,17 @@
             catch { state.miembrosPorChat[chat.id] = []; }
         }
         if (!chat.lastMsg) { chat._lastMsgPlain = chat.lastMsg; return; }
+        // si no se puede descifrar, nunca mostrar el valor crudo (ciphertext) en el preview
         try {
             if (chat.tipo === "GRUPO") {
                 const gk = await getGroupKey(chat.id);
-                chat._lastMsgPlain = gk ? await Crypto.decryptGroup(chat.lastMsg, gk) : chat.lastMsg;
+                chat._lastMsgPlain = gk ? await Crypto.decryptGroup(chat.lastMsg, gk) : "No se puede descifrar";
             } else {
                 const otro = state.miembrosPorChat[chat.id].find(m => m.id !== state.usuario.id);
                 const pub = otro ? await getPubKey(otro.id) : null;
-                chat._lastMsgPlain = pub ? await Crypto.decryptDirect(chat.lastMsg, pub) : chat.lastMsg;
+                chat._lastMsgPlain = pub ? await Crypto.decryptDirect(chat.lastMsg, pub) : "No se puede descifrar";
             }
-        } catch { chat._lastMsgPlain = chat.lastMsg; }
+        } catch { chat._lastMsgPlain = "No se puede descifrar"; }
     }
 
     function renderChats() {
@@ -1849,10 +1850,14 @@
         } catch (e) {
             // 404 = el grupo nunca tuvo clave (creado antes del cifrado E2E, o la
             // distribución falló): nadie puede descifrar nada hasta que alguien la genere.
-            // Auto-reparar generando y distribuyendo una nueva en vez de quedar roto para siempre.
+            // Auto-reparar, pero SOLO el creador la genera: si cada miembro generara la suya
+            // al mismo tiempo, las escrituras concurrentes se pisan entre sí y terminan con
+            // filas mezcladas de distintas claves (nadie puede descifrar ni sus propios mensajes).
             if (String(e.message).includes("404")) {
                 try {
                     const miembros = await api("GET", `api/chats/${chatId}/miembros`);
+                    const yo = miembros.find(m => m.id === state.usuario.id);
+                    if (yo?.rol !== "CREADOR") return null;
                     await distribuirClaveGrupo(chatId, miembros);
                     return state.groupKeys[chatId] || null;
                 } catch { return null; }
