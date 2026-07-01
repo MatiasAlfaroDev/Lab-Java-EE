@@ -24,6 +24,9 @@ import java.util.Set;
 @Priority(Priorities.AUTHENTICATION)
 public class TokenAuthFilter implements ContainerRequestFilter {
 
+    // endsWith en vez de comparar el path exacto: getUriInfo().getPath() puede venir
+    // con o sin barra inicial según el server/deployment, y con el match exacto el
+    // filtro terminó bloqueando también /usuarios/login (nadie podía loguearse).
     private static final Set<String> RUTAS_PUBLICAS = Set.of(
         "usuarios/login",
         "usuarios/registro"
@@ -37,7 +40,9 @@ public class TokenAuthFilter implements ContainerRequestFilter {
         if (HttpMethod.OPTIONS.equals(requestContext.getMethod())) return;
 
         String path = requestContext.getUriInfo().getPath();
-        if (RUTAS_PUBLICAS.contains(path)) return;
+        for (String publica : RUTAS_PUBLICAS) {
+            if (path.endsWith(publica)) return;
+        }
 
         String token = requestContext.getHeaderString("Authorization");
         try {
