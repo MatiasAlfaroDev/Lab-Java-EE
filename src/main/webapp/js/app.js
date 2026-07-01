@@ -1925,7 +1925,7 @@
         $("#panel-vacio").hidden = false;
 
         if (state.usuario.rol !== "ADMIN") {
-            Crypto.ensureKeyPair(api).catch(e => console.warn("ensureKeyPair:", e));
+            Crypto.ensureKeyPair(api, state.usuario.id).catch(e => console.warn("ensureKeyPair:", e));
         }
         cargarChats();
         conectarWs();

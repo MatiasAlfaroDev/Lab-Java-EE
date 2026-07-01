@@ -7,6 +7,13 @@ const Crypto = (() => {
   const DB_VERSION = 1;
   const STORE = "keys";
 
+  // IndexedDB es por origen, no por cuenta: sin namespacear por usuario, el segundo
+  // usuario que loguea en el mismo navegador encontraba la clave del primero cacheada
+  // y nunca generaba/subía la suya ("ya existe"), dejando al destinatario real sin
+  // clave pública registrada en el server.
+  let currentUserId = null;
+  const keyName = () => currentUserId != null ? `ecdhPriv:${currentUserId}` : "ecdhPriv";
+
   // ── IndexedDB helpers ──────────────────────────────────────────────
   function openDB() {
     return new Promise((res, rej) => {
@@ -92,8 +99,9 @@ const Crypto = (() => {
    * y sube la pública al server usando apiFn.
    * apiFn(method, path, body) — misma firma que api() en app.js.
    */
-  async function ensureKeyPair(apiFn) {
-    const existing = await dbGet("ecdhPriv");
+  async function ensureKeyPair(apiFn, userId) {
+    currentUserId = userId;
+    const existing = await dbGet(keyName());
     if (existing) return; // ya existe
 
     const pair = await crypto.subtle.generateKey(
@@ -101,16 +109,16 @@ const Crypto = (() => {
       false,           // privada no exportable
       ["deriveKey"]
     );
-    await dbPut("ecdhPriv", pair.privateKey);
+    await dbPut(keyName(), pair.privateKey);
 
     const pubRaw = await crypto.subtle.exportKey("spki", pair.publicKey);
     const pubB64 = bytesToB64(pubRaw);
     await apiFn("PUT", "api/usuarios/clave-publica", { clavePub: pubB64 });
   }
 
-  /** Devuelve la CryptoKey privada local o null si no existe. */
+  /** Devuelve la CryptoKey privada local del usuario actual, o null si no existe. */
   async function getPrivKey() {
-    return dbGet("ecdhPriv");
+    return dbGet(keyName());
   }
 
   // ── Cifrado 1:1 (ECDH directo) ─────────────────────────────────────
