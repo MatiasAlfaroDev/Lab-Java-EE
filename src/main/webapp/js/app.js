@@ -582,6 +582,68 @@
         return URL.createObjectURL(blob);
     }
 
+    function fechaRelativa(iso) {
+        if (!iso) return null;
+        const d = new Date(iso);
+        if (isNaN(d)) return null;
+        const diffMs = d - Date.now();
+        const dias = Math.round(diffMs / 86400000);
+        if (dias < 0) return "venció";
+        if (dias === 0) return "vence hoy";
+        if (dias === 1) return "vence mañana";
+        return `vence en ${dias} días`;
+    }
+
+    function renderPollBubble(encuesta) {
+        const card = document.createElement("div");
+        card.className = "poll-bubble";
+
+        const label = document.createElement("span");
+        label.className = "poll-label";
+        label.textContent = "ENCUESTA";
+        card.appendChild(label);
+
+        const pregunta = document.createElement("p");
+        pregunta.className = "poll-pregunta";
+        pregunta.textContent = encuesta.pregunta;
+        card.appendChild(pregunta);
+
+        const yaVoto = encuesta.myVote != null;
+        for (const op of encuesta.opciones) {
+            const pct = encuesta.total > 0 ? Math.round((op.votos / encuesta.total) * 100) : 0;
+            const fila = document.createElement(yaVoto ? "div" : "button");
+            fila.className = "poll-opcion" + (op.id === encuesta.myVote ? " votada" : "");
+            if (!yaVoto) {
+                fila.addEventListener("click", () => votarEncuesta(encuesta.id, op.id));
+            }
+            fila.innerHTML = `
+                <div class="poll-opcion-top">
+                    <span class="poll-opcion-texto">${op.texto}</span>
+                    ${yaVoto ? `<span class="poll-opcion-pct">${pct}%</span>` : ""}
+                </div>
+                ${yaVoto ? `<div class="poll-barra"><div class="poll-progreso" style="width:${pct}%"></div></div>` : ""}
+            `;
+            card.appendChild(fila);
+        }
+
+        const pie = document.createElement("p");
+        pie.className = "poll-pie";
+        const vence = fechaRelativa(encuesta.expires_at);
+        pie.textContent = `${encuesta.total} votos` + (vence ? ` · ${vence}` : "");
+        card.appendChild(pie);
+
+        return card;
+    }
+
+    async function votarEncuesta(pollId, opcionId) {
+        try {
+            await api("POST", ENCUESTA_ENDPOINTS.votar(pollId, opcionId));
+            await cargarMensajes(state.chatActual.id, { mantenerScroll: true });
+        } catch (e) {
+            mostrarToast("No se pudo registrar el voto: " + e.message, "error");
+        }
+    }
+
     function renderMensaje(m) {
         const esMio = m.sender_id === state.usuario.id;
 
@@ -714,6 +776,13 @@
                 });
                 bubble.appendChild(texto);
             }
+        } else if (m.tipo === "ENCUESTA" && m.encuesta) {
+            bubble.appendChild(renderPollBubble(m.encuesta));
+        } else if (m.tipo === "ENCUESTA" && !m.encuesta) {
+            // ponytail: defensivo — construirDTO() siempre debería adjuntar `encuesta`
+            // a un mensaje ENCUESTA, pero degradar a texto plano si llegara a faltar.
+            texto.textContent = "📊 Encuesta";
+            bubble.appendChild(texto);
         } else {
             if (m.cifrado && m._plain === null) {
                 texto.textContent = "[no se puede descifrar en este dispositivo]";
@@ -724,7 +793,7 @@
             }
         }
 
-        if (!m.adjunto || m.cifrado) {
+        if (m.tipo !== "ENCUESTA" && (!m.adjunto || m.cifrado)) {
             bubble.appendChild(texto);
         }
 

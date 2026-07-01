@@ -1116,6 +1116,47 @@ html.dark .tag.manager { background: rgba(34,197,94,.2);  border-color: rgba(34,
 .audio-progreso { height: 100%; background: var(--accent); width: 0%; transition: width .1s linear; }
 .audio-duracion { font-size: 11px; color: rgba(212,226,244,.7); white-space: nowrap; min-width: 32px; }
 
+/* ── Poll bubble ── */
+.poll-bubble {
+    background: var(--bubble-recv);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 220px;
+}
+.poll-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .7px;
+    color: var(--accent);
+}
+.poll-pregunta { font-size: 13px; font-weight: 600; color: var(--text); }
+.poll-opcion {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    text-align: left;
+    padding: 8px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+}
+button.poll-opcion:hover { background: var(--hover); }
+.poll-opcion.votada { border-color: var(--accent); }
+.poll-opcion-top { display: flex; justify-content: space-between; gap: 8px; }
+.poll-opcion-texto { font-size: 13px; color: var(--text); }
+.poll-opcion-pct { font-size: 12px; font-weight: 600; color: var(--text-muted); }
+.poll-barra { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.poll-progreso {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width .4s ease;
+}
+.poll-pie { font-size: 11px; color: var(--text-muted); }
+
 /* ── Admin metrics ── */
 .admin-metricas { display: flex; gap: 12px; padding: 16px 16px 8px; }
 .admin-metrica { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 14px 8px; }
