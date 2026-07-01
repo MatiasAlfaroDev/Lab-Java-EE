@@ -145,6 +145,17 @@
                         <button id="cancelar-edicion">Cancelar</button>
                     </div>
 
+                    <div id="barra-respuesta" class="barra-edicion barra-respuesta" hidden>
+                        <div class="respuesta-info">
+                            <ion-icon name="arrow-undo-outline"></ion-icon>
+                            <div class="respuesta-texto-col">
+                                <span class="respuesta-autor" id="respuesta-autor"></span>
+                                <span class="respuesta-preview" id="respuesta-texto"></span>
+                            </div>
+                        </div>
+                        <button id="cancelar-respuesta">Cancelar</button>
+                    </div>
+
                     <div class="composer">
                         <div class="menu-adjuntos-wrap">
                             <button id="btn-adjuntos" class="btn-icono" title="Adjuntar">
@@ -245,8 +256,13 @@
     </div>
 
     <!-- ═══════════ Menú contextual de mensaje ═══════════ -->
-    <div id="menu-mensaje" class="overlay" hidden>
-        <div class="menu-box" id="menu-mensaje-box"></div>
+    <div id="menu-mensaje" class="overlay overlay-blur" hidden role="menu" aria-label="Acciones del mensaje">
+        <div class="menu-contexto">
+            <div class="reaction-bar" id="reaction-bar"></div>
+            <div class="msg-preview" id="msg-preview"></div>
+            <div class="menu-box" id="menu-mensaje-box"></div>
+            <button class="menu-cancelar" id="menu-cancelar">CANCELAR</button>
+        </div>
     </div>
 
     <!-- ═══════════ Nuevo chat (menú) ═══════════ -->

@@ -17,6 +17,7 @@
         chatActual: null,
         mensajes: [],
         editando: null,        // mensaje en edición
+        respondiendo: null,    // mensaje al que se responde
         menuMensaje: null,     // mensaje del menú abierto
         reenviarId: null,
         seleccionGrupo: new Set(),
@@ -598,6 +599,19 @@
         bubble.className = "bubble " + (esMio ? "bubble-mio" : "bubble-otro");
         if (state.editando?.id === m.id) bubble.classList.add("editando");
 
+        if (m.parentId && m.parentPreview && !m.eliminado) {
+            const quote = document.createElement("div");
+            quote.className = "bubble-quote";
+            const autor = document.createElement("span");
+            autor.className = "quote-autor";
+            autor.textContent = m.parentPreview.sender_username;
+            const texto = document.createElement("span");
+            texto.className = "quote-texto";
+            texto.textContent = m.parentPreview.contenido;
+            quote.append(autor, texto);
+            bubble.appendChild(quote);
+        }
+
         if (m.mensajeOrigenId > 0 && !m.eliminado) {
             const fwd = document.createElement("span");
             fwd.className = "bubble-fwd";
@@ -754,36 +768,50 @@
 
     // ───────── Menú de mensaje (overlay centrado, como Expo) ─────────
     function abrirMenuMensaje(m, esMio) {
-            console.log("TIPO:", m.tipo);
-    console.log("MENSAJE:", m);
         state.menuMensaje = m;
-        const box = $("#menu-mensaje-box");
-        box.innerHTML = "";
 
-        // reacciones rápidas
-        const emojis = document.createElement("div");
-        emojis.className = "menu-emojis";
-        for (const e of QUICK_EMOJIS.slice(0, 6)) {
+        // 1. barra de reacciones
+        const reactionBar = $("#reaction-bar");
+        reactionBar.innerHTML = "";
+        for (const e of QUICK_EMOJIS) {
             const b = document.createElement("button");
             b.textContent = e;
             b.addEventListener("click", () => { cerrarMenuMensaje(); reaccionar(m.id, e); });
-            emojis.appendChild(b);
+            reactionBar.appendChild(b);
         }
-        box.appendChild(emojis);
+        const mas = document.createElement("button");
+        mas.className = "reaction-mas";
+        mas.textContent = "+";
+        mas.title = "Más reacciones";
+        // ponytail: no hay picker completo de emojis en ningún cliente todavía; mostrar
+        // próximamente en vez de un picker real. Subir cuando exista la infraestructura.
+        mas.addEventListener("click", () => mostrarToast("Selector completo próximamente", "info"));
+        reactionBar.appendChild(mas);
 
-        const item = (texto, fn, peligro = false) => {
+        // 2. vista previa del mensaje seleccionado (clona el render real, sin handlers)
+        const preview = $("#msg-preview");
+        preview.innerHTML = "";
+        const clon = renderMensaje(m);
+        preview.appendChild(clon);
+
+        // 3. menú de acciones
+        const box = $("#menu-mensaje-box");
+        box.innerHTML = "";
+        const item = (texto, icono, fn, peligro = false) => {
             const b = document.createElement("button");
-            b.textContent = texto;
+            b.innerHTML = `<ion-icon name="${icono}"></ion-icon><span>${texto}</span>`;
             if (peligro) b.classList.add("peligro");
             b.addEventListener("click", () => { cerrarMenuMensaje(); fn?.(); });
             box.appendChild(b);
         };
 
-        if (esMio && m.tipo === 'TEXTO') item("Editar", () => iniciarEdicion(m));
-        item("Eliminar para mí", () => eliminarParaMi(m.id), true);
-        if (esMio) item("Eliminar para todos", () => eliminarParaTodos(m.id), true);
-        item("Reenviar", () => abrirModalReenviar(m.id));
-        item("Cancelar");
+        item("Responder", "arrow-undo-outline", () => iniciarRespuesta(m));
+        if (esMio && !m.eliminado) item("Reenviar", "arrow-redo-outline", () => abrirModalReenviar(m.id));
+        if (esMio && m.tipo === "TEXTO" && !m.eliminado) item("Editar", "pencil-outline", () => iniciarEdicion(m));
+        item("Eliminar para mí", "trash-outline", () => eliminarParaMi(m.id), true);
+        if (esMio) item("Eliminar para todos", "trash-outline", () => eliminarParaTodos(m.id), true);
+
+        $("#menu-cancelar").onclick = cerrarMenuMensaje;
 
         $("#menu-mensaje").hidden = false;
     }
@@ -791,6 +819,7 @@
     function cerrarMenuMensaje() {
         state.menuMensaje = null;
         $("#menu-mensaje").hidden = true;
+        $("#msg-preview").innerHTML = "";
     }
 
     // ───────── Acciones de mensaje ─────────
@@ -841,18 +870,19 @@
                     if (!cifrado) {
                         throw new Error("No se puede cifrar: destinatario sin clave E2E registrada");
                     }
-                    await api("POST", "api/mensajes/enviar", { chatId, contenido: payload, tipo: "TEXTO", cifrado });
+                    await api("POST", "api/mensajes/enviar", { chatId, contenido: payload, tipo: "TEXTO", cifrado, parentId: state.respondiendo ? state.respondiendo.id : undefined });
                 }
                 if (esGrupo) {
                     if (!cifrado) {
                         throw new Error("No se puede cifrar: destinatario sin clave E2E registrada");
                     }
-                    await api("POST", "api/mensajes/enviar", { chatId, contenido: payload, tipo: "TEXTO", cifrado });
+                    await api("POST", "api/mensajes/enviar", { chatId, contenido: payload, tipo: "TEXTO", cifrado, parentId: state.respondiendo ? state.respondiendo.id : undefined });
                 }
             }
             input.value = "";
             autoResizeTextarea(input);
             actualizarBotonEnviar();
+            if (state.respondiendo) cancelarRespuesta();
             await cargarMensajes(chatId);
             cargarChats();
         } catch (e) {
@@ -919,7 +949,25 @@
         }
     }
 
+    function iniciarRespuesta(m) {
+        if (state.editando) cancelarEdicion();
+        state.respondiendo = m;
+        $("#barra-respuesta").hidden = false;
+        $("#respuesta-autor").textContent = m.sender_id === state.usuario.id ? "Tú" : m.sender_username;
+        const previewTexto = m.eliminado ? "Mensaje eliminado"
+            : m.cifrado ? (m._plain ?? "[mensaje cifrado]")
+            : (m.contenido ?? "");
+        $("#respuesta-texto").textContent = previewTexto;
+        $("#input-mensaje").focus();
+    }
+
+    function cancelarRespuesta() {
+        state.respondiendo = null;
+        $("#barra-respuesta").hidden = true;
+    }
+
     function iniciarEdicion(m) {
+        if (state.respondiendo) cancelarRespuesta();
         state.editando = m;
         $("#barra-edicion").hidden = false;
         const input = $("#input-mensaje");
@@ -1770,6 +1818,7 @@
             if (ev.key === "Escape") cancelarEdicion();
         });
         $("#cancelar-edicion").addEventListener("click", cancelarEdicion);
+        $("#cancelar-respuesta").addEventListener("click", cancelarRespuesta);
 
         $("#btn-adjuntos").addEventListener("click", (ev) => {
             ev.stopPropagation();
@@ -1822,6 +1871,9 @@
         // menú de mensaje: cerrar al tocar el fondo
         $("#menu-mensaje").addEventListener("click", (ev) => {
             if (ev.target === $("#menu-mensaje")) cerrarMenuMensaje();
+        });
+        document.addEventListener("keydown", (ev) => {
+            if (ev.key === "Escape" && !$("#menu-mensaje").hidden) cerrarMenuMensaje();
         });
 
         // overlays: botones cerrar y click en el fondo

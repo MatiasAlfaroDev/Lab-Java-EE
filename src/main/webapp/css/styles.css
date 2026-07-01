@@ -583,6 +583,42 @@ html.dark .fab { box-shadow: 0 4px 14px rgba(46,157,174,.4); }
 .barra-edicion span { font-size: 12px; color: var(--text-muted); }
 .barra-edicion button { font-size: 12px; font-weight: 600; color: var(--accent); }
 
+.barra-respuesta { align-items: flex-start; }
+.respuesta-info { display: flex; align-items: flex-start; gap: 8px; min-width: 0; }
+.respuesta-info ion-icon { font-size: 16px; color: var(--accent); flex-shrink: 0; margin-top: 2px; }
+.respuesta-texto-col { display: flex; flex-direction: column; min-width: 0; }
+.respuesta-autor { font-size: 12px; font-weight: 600; color: var(--accent); }
+.respuesta-preview {
+    font-size: 12px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 320px;
+}
+
+.bubble-quote {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    border-left: 2px solid var(--accent);
+    padding: 3px 8px;
+    margin-bottom: 4px;
+    border-radius: 4px;
+    background: rgba(0,0,0,.04);
+}
+.bubble-mio .bubble-quote { border-left-color: rgba(255,255,255,.6); background: rgba(255,255,255,.12); }
+.bubble-quote .quote-autor { font-size: 11px; font-weight: 600; color: var(--accent); }
+.bubble-mio .bubble-quote .quote-autor { color: rgba(255,255,255,.85); }
+.bubble-quote .quote-texto {
+    font-size: 12px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.bubble-mio .bubble-quote .quote-texto { color: rgba(255,255,255,.72); }
+
 .composer { display: flex; align-items: flex-end; gap: 6px; }
 .composer > .menu-adjuntos-wrap > .btn-icono { width: 48px; height: 48px; }
 .composer > .menu-adjuntos-wrap > .btn-icono ion-icon { font-size: 28px; }
@@ -732,6 +768,11 @@ html.dark .fab { box-shadow: 0 4px 14px rgba(46,157,174,.4); }
     justify-content: center;
     z-index: 100;
     padding: 24px;
+}
+.overlay-blur {
+    background: rgba(0,0,0,.55);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
 }
 
 .pantalla {
@@ -895,40 +936,83 @@ html.dark .tag.manager { background: rgba(34,197,94,.2);  border-color: rgba(34,
 .ginfo-editar input { flex: 1; }
 
 /* menú contextual de mensaje (centrado, como Expo) */
-.menu-box {
-    width: 260px;
+.menu-contexto {
+    width: 320px;
+    max-width: 92vw;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.reaction-bar {
+    display: inline-flex;
+    gap: 4px;
     background: var(--panel-bg);
     border: 1px solid var(--border);
-    border-radius: 14px;
+    border-radius: 9999px;
+    padding: 6px 8px;
+    box-shadow: var(--shadow-card);
+}
+.reaction-bar button {
+    width: 32px;
+    height: 32px;
+    font-size: 18px;
+    border-radius: 9999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.reaction-bar button:hover { background: var(--hover); }
+.reaction-bar .reaction-mas {
+    background: var(--list-bg);
+    color: var(--text-muted);
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.msg-preview { align-self: flex-start; max-width: 100%; }
+.msg-preview .bubble { cursor: default; pointer-events: none; }
+
+.menu-box {
+    width: 100%;
+    background: var(--panel-bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
     overflow: hidden;
-    box-shadow: 0 16px 48px rgba(0,0,0,.55);
+    box-shadow: var(--shadow-card);
 }
 .menu-box button {
-    display: block;
+    display: flex;
+    align-items: center;
+    gap: 12px;
     width: 100%;
     text-align: left;
-    padding: 15px 16px;
+    padding: 14px 16px;
     font-size: 13px;
     color: var(--text);
     border-bottom: 1px solid var(--border);
 }
+.menu-box button ion-icon { font-size: 17px; color: var(--text-muted); flex-shrink: 0; }
 .menu-box button:last-child { border-bottom: none; }
 .menu-box button:hover { background: var(--hover); }
-.menu-box button.peligro { color: var(--error); }
-.menu-box .menu-emojis {
-    display: flex;
-    justify-content: center;
-    gap: 4px;
-    padding: 10px 8px;
-    border-bottom: 1px solid var(--border);
+.menu-box button.peligro,
+.menu-box button.peligro ion-icon { color: var(--error); }
+
+.menu-cancelar {
+    width: 100%;
+    background: var(--panel-bg);
+    border: 1px solid var(--border);
+    border-radius: 9999px;
+    padding: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .7px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    text-align: center;
 }
-.menu-box .menu-emojis button {
-    width: auto;
-    padding: 4px 6px;
-    font-size: 20px;
-    border-bottom: none;
-    border-radius: 8px;
-}
+.menu-cancelar:hover { background: var(--hover); }
 
 /* scrollbars */
 ::-webkit-scrollbar { width: 6px; }
