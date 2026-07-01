@@ -284,7 +284,7 @@
     }
 
     function enviarTyping() {
-        if (!state.ws || !state.chatActual || !state.usuario) return;
+        if (!state.ws || state.ws.readyState !== WebSocket.OPEN || !state.chatActual || !state.usuario) return;
         state.ws.send(JSON.stringify({
             tipo: "TYPING",
             chatId: state.chatActual.id,
@@ -292,7 +292,7 @@
         }));
         clearTimeout(typingTimer);
         typingTimer = setTimeout(() => {
-            if (!state.ws || !state.chatActual) return;
+            if (!state.ws || state.ws.readyState !== WebSocket.OPEN || !state.chatActual) return;
             state.ws.send(JSON.stringify({
                 tipo: "STOP_TYPING",
                 chatId: state.chatActual.id,
@@ -386,16 +386,18 @@
     }
 
     // El servidor no puede descifrar el último mensaje (E2E); se descifra acá para el preview de la lista.
+    // También deja cacheados los miembros del chat privado (se usa para la foto de perfil en la fila).
     async function descifrarPreviewChat(chat) {
+        if (chat.tipo === "PRIVADO" && !state.miembrosPorChat[chat.id]) {
+            try { state.miembrosPorChat[chat.id] = await api("GET", `api/chats/${chat.id}/miembros`); }
+            catch { state.miembrosPorChat[chat.id] = []; }
+        }
         if (!chat.lastMsg) { chat._lastMsgPlain = chat.lastMsg; return; }
         try {
             if (chat.tipo === "GRUPO") {
                 const gk = await getGroupKey(chat.id);
                 chat._lastMsgPlain = gk ? await Crypto.decryptGroup(chat.lastMsg, gk) : chat.lastMsg;
             } else {
-                if (!state.miembrosPorChat[chat.id]) {
-                    state.miembrosPorChat[chat.id] = await api("GET", `api/chats/${chat.id}/miembros`);
-                }
                 const otro = state.miembrosPorChat[chat.id].find(m => m.id !== state.usuario.id);
                 const pub = otro ? await getPubKey(otro.id) : null;
                 chat._lastMsgPlain = pub ? await Crypto.decryptDirect(chat.lastMsg, pub) : chat.lastMsg;
@@ -424,7 +426,12 @@
 
             const avatarWrap = document.createElement("div");
             avatarWrap.className = "avatar-wrap";
-            avatarWrap.appendChild(crearAvatar(nombre, 44, nombre.slice(0, 2).toUpperCase()));
+            const avatarEl = crearAvatar(nombre, 44, nombre.slice(0, 2).toUpperCase());
+            avatarWrap.appendChild(avatarEl);
+            if (chat.tipo === "PRIVADO") {
+                const otro = state.miembrosPorChat[chat.id]?.find(m => m.id !== state.usuario.id);
+                if (otro?.fotoPerfilUrl) aplicarFotoAvatar(avatarEl, otro.fotoPerfilUrl);
+            }
             if (chat.estado != null) {
                 const rowDot = document.createElement("span");
                 rowDot.className = "dot " + (chat.estado === "ONLINE" ? "dot-online" : "dot-offline");
@@ -507,7 +514,18 @@
                 estado.classList.remove("online");
             }
 
+        // cargarMensajes() necesita state.miembros para descifrar (ECDH con el otro
+        // participante); sin esto quedaba con los miembros del chat anterior (o vacío
+        // en login fresco) y fallaba con getPubKey(undefined). También se usa para la
+        // foto de perfil del header y de los remitentes en las burbujas.
+        try { state.miembros = await api("GET", `api/chats/${chat.id}/miembros`); }
+        catch { state.miembros = []; }
+
         setAvatar($("#chat-avatar"), nombre, nombre.slice(0, 2).toUpperCase());
+        if (chat.tipo === "PRIVADO") {
+            const otro = state.miembros.find(m => m.id !== state.usuario.id);
+            if (otro?.fotoPerfilUrl) aplicarFotoAvatar($("#chat-avatar"), otro.fotoPerfilUrl);
+        }
 
         await cargarMensajes(chat.id);
         api("POST", `api/mensajes/${chat.id}/leido`).catch(() => {});
@@ -708,7 +726,10 @@
         wrap.className = "msg-wrap" + (esMio ? " mio" : "");
 
         if (!esMio) {
-            wrap.appendChild(crearAvatar(m.sender_username, 28, m.sender_initials));
+            const senderAvatar = crearAvatar(m.sender_username, 28, m.sender_initials);
+            wrap.appendChild(senderAvatar);
+            const remitente = state.miembros?.find(x => x.id === m.sender_id);
+            if (remitente?.fotoPerfilUrl) aplicarFotoAvatar(senderAvatar, remitente.fotoPerfilUrl);
         }
 
         const col = document.createElement("div");
